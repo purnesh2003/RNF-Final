@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <h1>Market guidance without the sales pitch.</h1>
+    <p class="hero-lead">{{ site_name }} shares news, mutual fund and stock insights for free. Join the community to follow updates, ask questions and learn alongside other investors.</p>
+    <div class="hero-actions">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('community.chat') }}" class="btn btn-brand btn-lg">Open community</a>
+        <a href="{{ url_for('main.news') }}" class="btn btn-ghost btn-lg">Read the latest news</a>
+      {% else %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-brand btn-lg">Create free account</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-lg">Log in</a>
+      {% endif %}
+    </div>
+  </div>
+  <figure class="hero-portrait">
+    <img src="{{ url_for('static', filename='rakshith.jpg') }}" alt="Rakshith N">
+    <figcaption><strong>Rakshith N</strong><span>Market educator</span></figcaption>
+  </figure>
+</section>
+
+<dl class="ledger">
+  <div><dt>Instagram followers</dt><dd>75K+</dd></div>
+  <div><dt>Market experience</dt><dd>6+ years</dd></div>
+  <div><dt>Cost to members</dt><dd>Free</dd></div>
+</dl>
+
+<section class="block" id="sections" aria-labelledby="desks-h">
+  <div class="block-head"><h2 id="desks-h">Research desks</h2><p>Posted and curated by Rakshith, plus the newest quiz.</p></div>
+  <div class="row g-3">
+    {% for key, icon, title, text, endpoint in [
+      ('news','i-news','News','Headlines and developments that move the market.','main.news'),
+      ('mutual_funds','i-funds','Mutual Funds','Fund picks, NAV updates and guidance for long-term investors.','main.mutual_funds')] %}
+    {% set last = latest.get(key) if current_user.is_authenticated else none %}
+    <div class="col-12 col-md-4">
+      <a class="desk" href="{{ url_for(endpoint) }}">
+        <span class="desk-icon"><svg class="i"><use href="#{{ icon }}"/></svg></span>
+        <span class="desk-title">{{ title }}</span>
+        <span class="desk-text">{{ text }}</span>
+        <span class="desk-latest">
+          {% if last %}<small>Latest, {{ last.created_at|timeago }}</small><span>{{ last.title }}</span>
+          {% elif not current_user.is_authenticated %}<small>Members only</small><span>Log in to read the latest posts.</span>
+          {% else %}<small>No posts yet</small><span>New posts will appear here.</span>{% endif %}
+        </span>
+        <span class="desk-go">Open {{ title }}<svg class="i"><use href="#i-arrow"/></svg></span>
+      </a>
+    </div>
+    {% endfor %}
+    <div class="col-12 col-md-4">
+      <a class="desk" href="{{ url_for('main.take_quiz', quiz_id=latest_quiz.id) if latest_quiz and not quiz_attempt else url_for('main.quizzes') }}">
+        <span class="desk-icon"><svg class="i"><use href="#i-quiz"/></svg></span>
+        <span class="desk-title">Quiz</span>
+        <span class="desk-text">Test your market knowledge with the newest quiz.</span>
+        <span class="desk-latest">
+          {% if not current_user.is_authenticated %}<small>Members only</small><span>Log in to take the latest quiz.</span>
+          {% elif latest_quiz %}<small>{% if quiz_attempt %}Your score: {{ quiz_attempt.score }}/{{ quiz_attempt.total }}{% else %}New, {{ latest_quiz.created_at|timeago }}{% endif %}</small><span>{{ latest_quiz.title }}</span>
+          {% else %}<small>No quiz yet</small><span>New quizzes will appear here.</span>{% endif %}
+        </span>
+        <span class="desk-go">{% if latest_quiz and not quiz_attempt %}Take the quiz{% else %}Open Quizzes{% endif %}<svg class="i"><use href="#i-arrow"/></svg></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<div class="row g-4">
+  <section class="col-lg-8" id="feed" aria-labelledby="feed-h">
+    <div class="block-head d-flex justify-content-between align-items-end gap-2">
+      <div><h2 id="feed-h">Latest updates</h2><p>The newest posts from Rakshith.</p></div>
+      {% if current_user.is_admin %}<a class="btn btn-brand btn-sm" href="{{ url_for('admin.new_post') }}"><svg class="i"><use href="#i-plus"/></svg>New post</a>{% endif %}
+    </div>
+    <div class="ig-feed">
+    {% for p in posts.items %}{% include "_post_card.html" %}
+    {% else %}
+      <div class="empty"><svg class="i"><use href="#i-news"/></svg><strong>No updates yet</strong><span>Check back soon for new posts.</span></div>
+    {% endfor %}
+    </div>
+    {% if posts.has_prev or posts.has_next %}
+    <nav class="pager" aria-label="Pages">
+      {% if posts.has_prev %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.home', page=posts.prev_num) }}#feed">Newer posts</a>{% endif %}
+      {% if posts.has_next %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('main.home', page=posts.next_num) }}#feed">Older posts</a>{% endif %}
+    </nav>
+    {% endif %}
+  </section>
+
+  <aside class="col-lg-4" aria-label="Members area">
+    <div class="side-sticky">
+    {% if current_user.is_authenticated %}
+      <div class="panel">
+        <h3 class="panel-title">Your community</h3>
+        <ul class="quick">
+          <li><a href="{{ url_for('community.chat') }}"><svg class="i"><use href="#i-chat"/></svg><span><strong>Community chat</strong><small>NASM, Investors, Traders, General</small></span></a></li>
+          <li><a href="{{ url_for('main.documents') }}"><svg class="i"><use href="#i-folder"/></svg><span><strong>Documents</strong><small>Every shared file in one place</small></span></a></li>
+          <li><a href="{{ url_for('main.quizzes') }}"><svg class="i"><use href="#i-quiz"/></svg><span><strong>Quizzes</strong><small>Test your market knowledge</small></span></a></li>
+          <li><a href="{{ url_for('main.polls') }}"><svg class="i"><use href="#i-poll"/></svg><span><strong>Polls</strong><small>Vote and see live results</small></span></a></li>
+        </ul>
+      </div>
+    {% else %}
+      <div class="panel panel-join">
+        <h3 class="panel-title">Join the community</h3>
+        <p class="small mb-3">Create a free account to read every desk, chat with members, take quizzes and vote in polls.</p>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-brand w-100 mb-2">Create free account</a>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary w-100">Log in</a>
+      </div>
+    {% endif %}
+      <div class="panel">
+        <h3 class="panel-title">Our promise</h3>
+        <ul class="promise">
+          <li><svg class="i"><use href="#i-shield"/></svg>We don't sell courses.</li>
+          <li><svg class="i"><use href="#i-shield"/></svg>Market insights are free for every member.</li>
+          <li><svg class="i"><use href="#i-shield"/></svg>No hype and no hidden catch.</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

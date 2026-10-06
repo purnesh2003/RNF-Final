@@ -1,0 +1,3 @@
+# Database migrations
+
+This project uses Flask-Migrate/Alembic. The first migration is a baseline that creates the current schema on an empty database and is a no-op when the existing production schema already exists. Future schema changes must be committed as migrations.

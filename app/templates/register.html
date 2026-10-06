@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Create your free account · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Create your free account</h1>
+    <p class="auth-sub">Takes a minute. We use these details to set up your membership.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label" for="name">Full name</label>
+        <input id="name" name="name" class="form-control" value="{{ name or '' }}" maxlength="80" autocomplete="name" required autofocus></div>
+      <div class="mb-3"><label class="form-label" for="email">Email</label>
+        <input id="email" type="email" name="email" class="form-control" value="{{ email or '' }}" placeholder="name@gmail.com" autocomplete="email" required>
+        <div class="form-text">Use a real address (Gmail, Yahoo, Outlook, iCloud).</div></div>
+      <div class="row g-3 mb-3">
+        <div class="col-sm-6"><label class="form-label" for="dob">Date of birth</label>
+          <input id="dob" type="date" name="dob" class="form-control" value="{{ dob or '' }}" min="1900-01-01" max="{{ today }}" required></div>
+        <div class="col-sm-6"><label class="form-label" for="occupation">Occupation</label>
+          <input id="occupation" name="occupation" class="form-control" value="{{ occupation or '' }}" maxlength="100" placeholder="e.g. Student, Engineer" required></div>
+      </div>
+      <div class="mb-3"><label class="form-label" for="password">Password</label>
+        <input id="password" type="password" name="password" class="form-control" minlength="12" pattern="{{ pw_pattern }}" title="{{ pw_hint }}" autocomplete="new-password" required>
+        <div class="form-text">{{ pw_hint }}</div></div>
+      <div class="mb-4"><label class="form-label" for="confirm">Confirm password</label>
+        <input id="confirm" type="password" name="confirm" class="form-control" minlength="12" autocomplete="new-password" required></div>
+      <button class="btn btn-brand w-100 btn-lg">Create account</button>
+    </form>
+    <div class="auth-foot"><span>Already a member? <a href="{{ url_for('auth.login') }}">Log in</a></span></div>
+  </div>
+</div>
+{% endblock %}

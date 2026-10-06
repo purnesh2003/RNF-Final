@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="empty my-5">
+  <div class="display-4 fw-semibold" style="font-family:var(--font-serif);color:var(--ink)">{{ code }}</div>
+  <strong>{{ msg }}</strong>
+  <div class="d-flex gap-2 mt-3">
+    <a href="{{ url_for('main.home') }}" class="btn btn-brand">Back to home</a>
+    {% if code == 401 %}<a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">Log in</a>{% endif %}
+  </div>
+</div>
+{% endblock %}

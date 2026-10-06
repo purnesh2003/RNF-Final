@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Post to feed · Admin{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-news"/></svg>Create a post</h1><p>Publish news, information or a file to the home feed or one of the research desks.</p></div></div>
+<form method="post" enctype="multipart/form-data" class="card form-narrow"><div class="card-body p-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="mb-3"><label class="form-label">Publish to</label>
+    <select name="section" class="form-select">
+      {% for k, label in sections.items() %}<option value="{{ k }}" {{ 'selected' if k == selected }}>{{ label }}</option>{% endfor %}
+    </select></div>
+  <div class="row g-3 mb-3">
+    <div class="col-md-6"><label class="form-label">Type</label>
+      <select name="category" class="form-select">
+        {% for k, label in categories.items() %}<option value="{{ k }}">{{ label }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-6 d-flex align-items-end"><div class="form-check">
+      <input class="form-check-input" type="checkbox" name="pinned" value="1" id="pinned">
+      <label class="form-check-label" for="pinned">Pin to top of the feed</label></div></div>
+  </div>
+  <div class="mb-3"><label class="form-label">Title</label><input name="title" class="form-control" maxlength="200" required></div>
+  <div class="mb-3"><label class="form-label">Details</label><textarea name="body" rows="8" class="form-control" required></textarea></div>
+  <div class="mb-3"><label class="form-label">Photo, video or document <span class="text-muted fw-normal">(optional)</span></label>
+    <input type="file" name="file" class="form-control" accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4">
+    <div class="form-text">Photos and videos appear like a social post. PDFs and other files are attached for download. Photos and documents up to 15 MB, videos (MP4) up to 50 MB.</div></div>
+  <button class="btn btn-brand">Publish</button>
+</div></form>
+{% endblock %}

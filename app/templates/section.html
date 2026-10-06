@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{% set sec_icon = {'news':'news','mutual_funds':'funds','stocks':'stocks'}.get(section, 'news') %}<svg class="i"><use href="#i-{{ sec_icon }}"/></svg>{{ title }}</h1>
+    <p>{{ blurb }}</p>
+  </div>
+  {% if current_user.is_admin %}<a class="btn btn-brand" href="{{ url_for('admin.new_post', section=section) }}"><svg class="i"><use href="#i-plus"/></svg>New post</a>{% endif %}
+</div>
+<div class="ig-feed">
+{% for p in posts.items %}{% include "_post_card.html" %}
+{% else %}
+  <div class="empty"><svg class="i"><use href="#i-{{ sec_icon }}"/></svg><strong>Nothing posted in {{ title }} yet</strong><span>New posts will appear here.</span></div>
+{% endfor %}
+</div>
+{% if posts.has_prev or posts.has_next %}
+<nav class="pager" aria-label="Pages" style="max-width:640px">
+  {% if posts.has_prev %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ posts.prev_num }}">Newer posts</a>{% endif %}
+  {% if posts.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ posts.next_num }}">Older posts</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+# Copy to terraform.tfvars. Never commit this file: it may contain infrastructure secrets.
+region                     = "ap-south-1"
+domain_name                = "community.yourdomain.com"
+# ALB certificate in ap-south-1 for both public and origin hostnames
+certificate_arn            = "arn:aws:acm:ap-south-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# CloudFront certificate MUST be in us-east-1 for community.yourdomain.com
+cloudfront_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
+# DNS name covered by certificate_arn and resolving to the ALB.
+cloudfront_origin_domain   = "origin.community.yourdomain.com"
+admin_email                = "you@example.com"
+# Leave blank to generate a random bootstrap password. Use `terraform output -raw bootstrap_admin_password`.
+admin_password             = ""
+whatsapp_link              = "https://chat.whatsapp.com/your-real-invite-code"
+
+enable_cloudfront          = false
+# After the ALB exists and origin.community.yourdomain.com resolves to it, set this to true and apply again.
+db_instance_count           = 2
+redis_nodes                 = 2
+min_tasks                   = 2
+max_tasks                   = 20
+target_connections_per_task = 1500
+db_max_acu                  = 8
+protect_data                = true
+ecr_force_delete             = false
+
+# Optional monitoring email (SNS sends a confirmation message first)
+# alert_email = "ops@example.com"

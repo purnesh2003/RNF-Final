@@ -1,0 +1,34 @@
+{# Hamburger-driven admin sidebar (shown to admins on every page). #}
+<div class="offcanvas offcanvas-start" tabindex="-1" id="adminMenu" aria-labelledby="adminMenuLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="adminMenuLabel">Admin controls</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body admin-menu">
+    <div class="list-group">
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.dashboard') }}"><svg class="i"><use href="#i-dash"/></svg>Dashboard</a>
+    </div>
+    <div class="menu-title">Publish</div>
+    <div class="list-group">
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.new_post', section='home') }}"><svg class="i"><use href="#i-home"/></svg>Post to home feed</a>
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.new_post', section='news') }}"><svg class="i"><use href="#i-news"/></svg>Post news</a>
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.new_post', section='mutual_funds') }}"><svg class="i"><use href="#i-funds"/></svg>Post mutual funds info</a>
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.new_post', section='stocks') }}"><svg class="i"><use href="#i-stocks"/></svg>Post stocks info</a>
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.new_quiz') }}"><svg class="i"><use href="#i-quiz"/></svg>Create quiz</a>
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.new_poll') }}"><svg class="i"><use href="#i-poll"/></svg>Create poll</a>
+    </div>
+    <div class="menu-title">Members</div>
+    <div class="list-group">
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.users') }}"><svg class="i"><use href="#i-users"/></svg>Manage users</a>
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.users_xlsx') }}"><svg class="i"><use href="#i-download"/></svg>Export users (Excel)</a>
+      <a class="list-group-item list-group-item-action" href="{{ url_for('admin.users_csv') }}"><svg class="i"><use href="#i-download"/></svg>Export users (CSV)</a>
+    </div>
+    <div class="menu-title">Community chat mode</div>
+    <form method="post" action="{{ url_for('admin.chat_mode') }}" class="d-grid gap-2">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button name="mode" value="open" class="btn btn-sm btn-outline-secondary text-start">Open: everyone can chat</button>
+      <button name="mode" value="slow" class="btn btn-sm btn-outline-secondary text-start">Slow: one message every {{ config.CHAT_SLOW_SECONDS }} s</button>
+      <button name="mode" value="admins" class="btn btn-sm btn-outline-secondary text-start">Admin only: announcements</button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard · Admin{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-quiz"/></svg>{{ quiz.title }}</h1><p>Quiz results</p></div></div>
+<div class="table-responsive"><table class="table align-middle">
+  <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Score</th><th>Submitted</th></tr></thead>
+  {% for r in rows %}<tr><td>{{ loop.index }}</td><td>{{ r.user.name }}</td><td>{{ r.user.email }}</td>
+    <td>{{ r.score }}/{{ r.total }}</td><td class="small">{{ r.created_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+  {% else %}<tr><td colspan="5" class="text-muted">No attempts yet.</td></tr>{% endfor %}
+</table></div>
+<a href="{{ url_for('main.quizzes') }}" class="btn btn-outline-secondary mt-3">Back to quizzes</a>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Polls · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-poll"/></svg>Polls</h1><p>Vote once and see live results.</p></div>{% if current_user.is_admin %}<a class="btn btn-brand" href="{{ url_for('admin.new_poll') }}"><svg class="i"><use href="#i-plus"/></svg>Create poll</a>{% endif %}</div>
+{% for p in polls %}
+  {% set ns = namespace(total=0) %}
+  {% for o in p.options %}{% set ns.total = ns.total + counts.get((p.id, o.id), 0) %}{% endfor %}
+  <div class="card shadow-sm border-0 rounded-4 mb-3" id="poll-{{ p.id }}"><div class="card-body">
+    <h5>{{ p.question }} {% if not p.is_open %}<span class="badge bg-secondary">Closed</span>{% endif %}</h5>
+    {% if p.id in mine or not p.is_open %}
+      {% for o in p.options %}
+        {% set c = counts.get((p.id, o.id), 0) %}
+        {% set pct = (c * 100 / ns.total)|round|int if ns.total else 0 %}
+        <div class="mb-2">
+          <div class="d-flex justify-content-between small"><span>{{ o.text }}{% if mine.get(p.id) == o.id %} <em>(your vote)</em>{% endif %}</span><span>{{ c }} ({{ pct }}%)</span></div>
+          <div class="progress" style="height:10px"><div class="progress-bar bg-warning" style="width:{{ pct }}%"></div></div>
+        </div>
+      {% endfor %}
+      <div class="small text-muted">{{ ns.total }} vote{{ '' if ns.total == 1 else 's' }}</div>
+    {% else %}
+      <form method="post" action="{{ url_for('main.vote', poll_id=p.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% for o in p.options %}
+        <div class="form-check"><input class="form-check-input" type="radio" name="option" id="o{{ o.id }}" value="{{ o.id }}" required>
+          <label class="form-check-label" for="o{{ o.id }}">{{ o.text }}</label></div>
+        {% endfor %}
+        <button class="btn btn-brand btn-sm mt-2">Vote</button>
+      </form>
+    {% endif %}
+    {% if current_user.is_admin %}
+    <div class="d-flex gap-2 mt-3">
+      <form method="post" action="{{ url_for('admin.poll_action', poll_id=p.id, action='toggle') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-outline-secondary">{{ 'Close poll' if p.is_open else 'Reopen' }}</button></form>
+      <form method="post" action="{{ url_for('admin.poll_action', poll_id=p.id, action='delete') }}" data-confirm="Delete this poll?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-outline-danger">Delete</button></form>
+    </div>{% endif %}
+  </div></div>
+{% else %}<div class="empty"><svg class="i"><use href="#i-poll"/></svg><strong>No polls yet</strong><span>New polls will appear here.</span></div>{% endfor %}
+{% endblock %}

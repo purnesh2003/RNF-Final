@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Users · Admin{% endblock %}
+{% block content %}
+{% macro act(u, action, label, cls='', confirm='') %}
+<li><form method="post" action="{{ url_for('admin.user_action', user_id=u.id, action=action) }}" {% if confirm %}data-confirm="{{ confirm }}"{% endif %}>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="dropdown-item {{ cls }}">{{ label }}</button>
+</form></li>
+{% endmacro %}
+<div class="page-head">
+  <div><h1><svg class="i"><use href="#i-users"/></svg>Members <small class="text-muted fs-6 fw-normal">({{ users.total }})</small></h1>
+    <p>Everyone who has created an account. Export the list for your client in Excel.</p></div>
+  <div class="d-flex flex-wrap gap-2">
+    <form class="d-flex gap-2" method="get" role="search">
+      <input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search name, email or occupation" aria-label="Search members">
+      <button class="btn btn-sm btn-brand">Search</button>
+    </form>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.users_xlsx') }}"><svg class="i"><use href="#i-download"/></svg>Excel</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.users_csv') }}">CSV</a>
+  </div>
+</div>
+<div class="alert alert-info small">
+  Passwords are stored as one-way salted hashes, so nobody (including you) can read them — this protects your members if the database ever leaks.
+  Use <strong>Reset password</strong> to give someone a temporary password; they must change it at next login.
+</div>
+<div class="table-responsive">
+<table class="table table-hover align-middle table-stack">
+  <thead><tr><th>Member</th><th>Date of birth</th><th>Occupation</th><th>Role</th><th>Status</th><th>Joined</th><th>Last login</th><th class="text-end">Actions</th></tr></thead>
+  <tbody>
+  {% for u in users.items %}
+  <tr>
+    <td data-label="Member"><div class="fw-semibold">{{ u.name }}</div><div class="small text-muted">{{ u.email }}</div></td>
+    <td data-label="Date of birth">{{ u.dob.strftime('%d %b %Y') if u.dob else '-' }}</td>
+    <td data-label="Occupation">{{ u.occupation or '-' }}</td>
+    <td data-label="Role">{% if u.is_admin %}<span class="badge text-bg-dark">Admin</span>{% else %}<span class="text-muted">Member</span>{% endif %}</td>
+    <td data-label="Status">
+      {% if u.active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-danger">Suspended</span>{% endif %}
+      {% if u.muted %}<span class="badge text-bg-secondary">Muted</span>{% endif %}
+    </td>
+    <td class="small" data-label="Joined">{{ u.created_at.strftime('%d %b %Y') }}</td>
+    <td class="small" data-label="Last login">{{ u.last_login.strftime('%d %b %Y %H:%M') if u.last_login else '-' }}</td>
+    <td data-label="Actions" class="text-end">
+      {% if u.id != current_user.id %}
+      <div class="dropdown">
+        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Manage</button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          {{ act(u, 'suspend', 'Suspend', '', 'Suspend this user?') if u.active else act(u, 'activate', 'Activate') }}
+          {{ act(u, 'unmute', 'Unmute') if u.muted else act(u, 'mute', 'Mute in chat') }}
+          {{ act(u, 'demote', 'Remove admin rights', '', 'Remove admin rights?') if u.is_admin else act(u, 'promote', 'Make admin', '', 'Give admin rights?') }}
+          {{ act(u, 'reset-password', 'Reset password', '', 'Generate a new temporary password?') }}
+          <li><hr class="dropdown-divider"></li>
+          {{ act(u, 'delete', 'Delete member', 'text-danger', 'Permanently delete this user and their messages?') }}
+        </ul>
+      </div>
+      {% else %}<span class="text-muted small">You</span>{% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<nav class="pager justify-content-start mt-3">
+  {% if users.has_prev %}<a class="btn btn-sm btn-outline-secondary" href="?q={{ q }}&page={{ users.prev_num }}">Previous</a>{% endif %}
+  <span class="small align-self-center">Page {{ users.page }} of {{ users.pages or 1 }}</span>
+  {% if users.has_next %}<a class="btn btn-sm btn-outline-secondary" href="?q={{ q }}&page={{ users.next_num }}">Next</a>{% endif %}
+</nav>
+{% endblock %}

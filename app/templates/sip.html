@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}SIP Calculator · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>SIP Calculator</h1><p>Work out the monthly SIP you need for a goal, or see what a monthly SIP could grow to. Free for everyone, no login needed.</p></div></div>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm border-0 rounded-4"><div class="card-body p-4">
+      <form id="sip-form" novalidate onsubmit="return false">
+        <div class="sip-modes mb-4">
+          <span class="text-muted">I want to</span>
+          <div class="form-check"><input class="form-check-input" type="radio" name="mode" id="m-goal" value="goal" checked><label class="form-check-label fw-semibold" for="m-goal">Achieve a goal</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="mode" id="m-invest" value="invest"><label class="form-check-label fw-semibold" for="m-invest">Invest</label></div>
+        </div>
+        <div class="sip-field">
+          <div class="top"><label for="amount" id="amount-label">Final amount required (₹)</label>
+            <input type="number" class="form-control num" id="amount" inputmode="numeric" step="1000"></div>
+          <input type="range" class="form-range" id="amount-r" aria-label="Amount">
+        </div>
+        <div class="sip-field">
+          <div class="top"><label for="years">Duration (in years)</label>
+            <input type="number" class="form-control num" id="years" inputmode="numeric" min="1" max="40" step="1"></div>
+          <input type="range" class="form-range" id="years-r" min="1" max="40" step="1" aria-label="Years">
+        </div>
+        <div class="sip-field mb-0">
+          <div class="top"><label for="rate">Expected rate of return (p.a. %)</label>
+            <input type="number" class="form-control num" id="rate" inputmode="decimal" min="1" max="30" step="0.1"></div>
+          <input type="range" class="form-range" id="rate-r" min="1" max="30" step="0.5" aria-label="Rate">
+        </div>
+        <div id="sip-error" class="text-danger small mt-3" role="alert" hidden></div>
+      </form>
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm border-0 rounded-4 mb-3"><div class="card-body p-4">
+      <svg class="sip-donut" viewBox="0 0 120 120" role="img" aria-label="Invested amount versus estimated returns">
+        <circle cx="60" cy="60" r="48" fill="none" stroke="#6c9ea5" stroke-width="14"></circle>
+        <circle id="ring" cx="60" cy="60" r="48" fill="none" stroke="#c4861f" stroke-width="14" stroke-dasharray="0 301.6" transform="rotate(-90 60 60)"></circle>
+      </svg>
+      <div class="mt-3"><span class="sip-key" style="background:#6c9ea5"></span><span class="text-muted small text-uppercase">Total invested amount</span>
+        <div class="sip-big" id="out-invested">–</div></div>
+      <hr>
+      <div><span class="sip-key" style="background:#c4861f"></span><span class="text-muted small text-uppercase">Est. returns</span>
+        <div class="sip-big" id="out-returns">–</div></div>
+    </div></div>
+    <div class="sip-result">
+      <div class="text-muted small text-uppercase" id="res-label">Monthly SIP required</div>
+      <div class="sip-big" id="out-main">–</div>
+    </div>
+  </div>
+</div>
+<p class="text-muted small mt-4">This is an illustration, not advice. It assumes a steady rate of return and a SIP paid at the start of every month. Real mutual fund returns change with the market and are not guaranteed.</p>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='sip.js') }}"></script>{% endblock %}

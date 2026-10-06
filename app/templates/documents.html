@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Documents · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-folder"/></svg>Documents</h1><p>Every photo, video, PDF and file shared on the site, by the admin and by members, in one place. {{ total }} item{{ '' if total == 1 else 's' }}.</p></div></div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-6 col-md-3">
+    <label class="form-label small mb-1" for="f-type">Type</label>
+    <select id="f-type" name="type" class="form-select form-select-sm" data-autosubmit>
+      {% for k, v in types.items() %}<option value="{{ k }}" {{ 'selected' if k == kind }}>{{ v }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small mb-1" for="f-src">From</label>
+    <select id="f-src" name="source" class="form-select form-select-sm" data-autosubmit>
+      {% for k, v in sources.items() %}<option value="{{ k }}" {{ 'selected' if k == source }}>{{ v }}</option>{% endfor %}
+    </select>
+  </div>
+  <noscript><div class="col-auto align-self-end"><button class="btn btn-sm btn-brand">Filter</button></div></noscript>
+</form>
+
+{% if not items %}
+  <div class="empty"><svg class="i"><use href="#i-folder"/></svg><strong>No documents yet</strong><span>Files shared in the community chat or attached to admin posts will appear here.</span></div>
+{% else %}
+<div class="row g-3">
+  {% for d in items %}
+  <div class="col-6 col-md-4 col-lg-3">
+    <div class="card h-100 border-0 shadow-sm doc-card">
+      <div class="doc-thumb">
+        {% if d.is_image %}<a href="{{ d.url }}" target="_blank" rel="noopener"><img src="{{ d.url }}" alt="{{ d.name }}" loading="lazy"></a>
+        {% elif d.is_video %}<video src="{{ d.url }}" controls preload="metadata" playsinline></video>
+        {% else %}<a href="{{ d.url }}" {% if d.ext == 'PDF' %}target="_blank" rel="noopener"{% else %}download="{{ d.name }}"{% endif %} class="doc-ext" title="{{ 'Open' if d.ext == 'PDF' else 'Download' }} {{ d.name }}">📄<span>{{ d.ext }}</span></a>{% endif %}
+      </div>
+      <div class="card-body p-2">
+        <div class="fw-semibold small text-truncate" title="{{ d.name }}">{{ d.name }}</div>
+        {% if d.title %}<div class="small text-muted text-truncate" title="{{ d.title }}">{{ d.title }}</div>{% endif %}
+        <div class="small text-muted">{{ d.who }} · {{ d.where }}</div>
+        <div class="small text-muted">{{ d.created_at | timeago }}</div>
+        {% set viewable = d.is_image or d.is_video or d.ext == 'PDF' %}<a class="small" href="{{ d.url }}" {% if viewable %}target="_blank" rel="noopener"{% else %}download="{{ d.name }}"{% endif %}>{{ 'Open' if viewable else 'Download' }}</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if pages > 1 %}
+<nav class="d-flex justify-content-center align-items-center gap-3 mt-4" aria-label="Pages">
+  {% if page > 1 %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.documents', type=kind, source=source, page=page-1) }}">Newer</a>{% endif %}
+  <span class="small text-muted">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.documents', type=kind, source=source, page=page+1) }}">Older</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+document.querySelectorAll('[data-autosubmit]').forEach(s => s.addEventListener('change', () => s.form.submit()));
+</script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.title }} · {{ site_name }}{% endblock %}
+{% block content %}
+<h2>{{ quiz.title }}</h2>
+<p class="text-muted">{{ quiz.description }}</p>
+<p class="small text-warning-emphasis">You can attempt this quiz only once.</p>
+<div class="progress mb-3" role="progressbar" aria-label="Questions answered" style="height:8px"><div class="progress-bar" id="qprog" style="width:0%"></div></div>
+<p class="small text-muted" id="qcount" aria-live="polite">Answered 0 of {{ quiz.questions|length }}</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% for q in quiz.questions %}
+  <div class="card shadow-sm border-0 rounded-4 mb-3"><div class="card-body">
+    <h6>{{ loop.index }}. {{ q.text }}</h6>
+    {% for opt in q.options %}
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="q{{ q.id }}" id="q{{ q.id }}_{{ loop.index0 }}" value="{{ loop.index0 }}">
+      <label class="form-check-label" for="q{{ q.id }}_{{ loop.index0 }}">{{ opt }}</label>
+    </div>
+    {% endfor %}
+  </div></div>
+  {% endfor %}
+  <button class="btn btn-brand btn-lg" data-confirm="Submit your answers? You cannot retake this quiz.">Submit</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+const total = {{ quiz.questions|length }};
+function tick() {
+  const done = new Set([...document.querySelectorAll('input[type=radio]:checked')].map(r => r.name)).size;
+  document.getElementById('qprog').style.width = (total ? done * 100 / total : 0) + '%';
+  document.getElementById('qcount').textContent = 'Answered ' + done + ' of ' + total;
+}
+document.addEventListener('change', e => { if (e.target.type === 'radio') tick(); });
+</script>
+{% endblock %}

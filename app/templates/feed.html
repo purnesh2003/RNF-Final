@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}All posts · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1><svg class="i"><use href="#i-news"/></svg>All posts</h1><p>Every news item, update and shared document from Rakshith.</p></div>
+  {% if current_user.is_admin %}<a class="btn btn-brand" href="{{ url_for('admin.new_post') }}"><svg class="i"><use href="#i-plus"/></svg>New post</a>{% endif %}
+</div>
+<div class="ig-feed">
+{% for p in posts.items %}{% include "_post_card.html" %}
+{% else %}
+  <div class="empty"><svg class="i"><use href="#i-news"/></svg><strong>Nothing shared yet</strong><span>Check back soon.</span></div>
+{% endfor %}
+</div>
+{% if posts.has_prev or posts.has_next %}
+<nav class="pager" aria-label="Pages" style="max-width:640px">
+  {% if posts.has_prev %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ posts.prev_num }}">Newer posts</a>{% endif %}
+  {% if posts.has_next %}<a class="btn btn-outline-secondary btn-sm" href="?page={{ posts.next_num }}">Older posts</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

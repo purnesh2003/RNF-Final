@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Admin · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1><svg class="i"><use href="#i-dash"/></svg>Admin dashboard</h1><p>Publish content, manage members and control the community chat.</p></div>
+  <a class="btn btn-brand" href="{{ url_for('admin.users_xlsx') }}"><svg class="i"><use href="#i-download"/></svg>Export members (Excel)</a>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for label, key in [('Members','users'),('Active accounts','active'),('Chat messages','messages'),('Quizzes','quizzes'),('Polls','polls'),('Posts','posts')] %}
+  <div class="col-6 col-md-4 col-xl-2"><div class="trust-stat"><div class="trust-number">{{ stats[key] }}</div><div class="trust-label">{{ label }}</div></div></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3 mb-4">
+  {% for icon, title, text, href in [
+    ('news','Create a post','News, information or a file for the feed and desks.', url_for('admin.new_post')),
+    ('quiz','Create a quiz','Multiple-choice questions with a leaderboard.', url_for('admin.new_quiz')),
+    ('poll','Create a poll','Ask members to vote on a question.', url_for('admin.new_poll')),
+    ('users','Manage members','Search, mute, suspend, promote or reset.', url_for('admin.users'))] %}
+  <div class="col-12 col-sm-6 col-xl-3">
+    <a class="desk" href="{{ href }}">
+      <span class="desk-icon"><svg class="i"><use href="#i-{{ icon }}"/></svg></span>
+      <span class="desk-title">{{ title }}</span>
+      <span class="desk-text">{{ text }}</span>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="panel">
+  <h2 class="panel-title mb-1">Chat mode</h2>
+  <p class="small text-muted mb-3">Use Slow or Admin only when many members are online at once. Changes apply instantly.</p>
+  <form method="post" action="{{ url_for('admin.chat_mode') }}" class="d-flex flex-wrap gap-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for value, label in [('open','Open: everyone can chat'),('slow','Slow: one message per member every ' ~ config.CHAT_SLOW_SECONDS ~ ' s'),('admins','Admin only: announcements')] %}
+    <button name="mode" value="{{ value }}" class="btn btn-sm {{ 'btn-brand' if chat_mode == value else 'btn-outline-secondary' }}">{{ label }}</button>
+    {% endfor %}
+  </form>
+</div>
+
+<div class="block-head mt-4"><h2 class="h4">Newest members</h2></div>
+<div class="table-responsive"><table class="table align-middle table-stack">
+  <thead><tr><th>Name</th><th>Email</th><th>Joined</th></tr></thead>
+  <tbody>{% for u in recent %}<tr><td data-label="Name">{{ u.name }}</td><td data-label="Email">{{ u.email }}</td><td data-label="Joined">{{ u.created_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+  {% else %}<tr><td colspan="3" class="text-muted">No members yet.</td></tr>{% endfor %}</tbody>
+</table></div>
+{% endblock %}

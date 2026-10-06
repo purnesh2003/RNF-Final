@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Quizzes · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-quiz"/></svg>Quizzes</h1><p>Test your market knowledge. Each quiz can be attempted once.</p></div>{% if current_user.is_admin %}<a class="btn btn-brand" href="{{ url_for('admin.new_quiz') }}"><svg class="i"><use href="#i-plus"/></svg>Create quiz</a>{% endif %}</div>
+<div class="row g-3">
+{% for q in quizzes %}
+  <div class="col-md-6"><div class="card h-100 shadow-sm border-0 rounded-4"><div class="card-body d-flex flex-column">
+    <h5>{{ q.title }} {% if not q.is_open %}<span class="badge bg-secondary">Closed</span>{% endif %}{% if q.difficulty %} <span class="badge bg-light text-dark border">{{ q.difficulty|capitalize }}</span>{% endif %}</h5>
+    <p class="text-muted small flex-grow-1">{{ q.description }}</p>
+    <div class="small mb-2">{{ q.questions|length }} questions</div>
+    <div class="d-flex gap-2 align-items-center">
+      {% if q.id in done %}
+        <a class="btn btn-outline-success btn-sm" href="{{ url_for('main.take_quiz', quiz_id=q.id) }}">Your score: {{ done[q.id].score }}/{{ done[q.id].total }}</a>
+      {% elif q.is_open %}
+        <a class="btn btn-brand btn-sm" href="{{ url_for('main.take_quiz', quiz_id=q.id) }}">Start quiz</a>
+      {% endif %}
+      {% if current_user.is_admin %}
+        <a class="btn btn-sm btn-outline-dark" href="{{ url_for('admin.leaderboard', quiz_id=q.id) }}">Leaderboard</a>
+        <form method="post" action="{{ url_for('admin.quiz_action', quiz_id=q.id, action='toggle') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-secondary">{{ 'Close' if q.is_open else 'Reopen' }}</button></form>
+        <form method="post" action="{{ url_for('admin.quiz_action', quiz_id=q.id, action='delete') }}" data-confirm="Delete quiz and all results?">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Delete</button></form>
+      {% endif %}
+    </div>
+  </div></div></div>
+{% else %}<div class="col-12"><div class="empty"><svg class="i"><use href="#i-quiz"/></svg><strong>No quizzes yet</strong><span>New quizzes will appear here.</span></div></div>{% endfor %}
+</div>
+{% endblock %}

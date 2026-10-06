@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Create quiz · Admin{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-quiz"/></svg>Create a quiz</h1><p>Let AI draft the questions, or type them yourself. Review and edit everything before publishing. Members are e-mailed when it goes live and can attempt it once.</p></div></div>
+
+<div class="card mb-3 form-narrow" id="ai-panel"><div class="card-body p-4">
+  <h2 class="h5 mb-1">Generate with AI</h2>
+  <p class="small text-muted mb-3">Nothing is saved until you press <strong>Publish quiz</strong>.</p>
+  {% if not ai_ready %}
+    <div class="alert alert-warning small mb-3">AI generation is not switched on yet. Add <code>GEMINI_API_KEY</code> to the server's <code>.env</code> file and restart. You can still create a quiz by hand below.</div>
+  {% endif %}
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-6"><label class="form-label" for="ai-topic">Topic</label><input id="ai-topic" class="form-control" maxlength="200" placeholder="e.g. Mutual fund basics" {{ '' if ai_ready else 'disabled' }}></div>
+    <div class="col-6 col-md-2"><label class="form-label" for="ai-count">Questions</label><input id="ai-count" type="number" class="form-control" min="1" max="{{ max_q }}" value="5" {{ '' if ai_ready else 'disabled' }}></div>
+    <div class="col-6 col-md-2"><label class="form-label" for="ai-diff">Difficulty</label>
+      <select id="ai-diff" class="form-select" {{ '' if ai_ready else 'disabled' }}><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option></select></div>
+    <div class="col-12 col-md-2 d-grid"><button type="button" class="btn btn-brand" id="ai-go" {{ '' if ai_ready else 'disabled' }}>Generate</button></div>
+  </div>
+  <div id="ai-status" class="small mt-3" role="status" aria-live="polite" hidden></div>
+</div></div>
+
+<form method="post" id="quiz-form" class="form-narrow">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="questions_json" id="questions_json">
+  <input type="hidden" name="source" id="f-source" value="manual">
+  <input type="hidden" name="topic" id="f-topic">
+  <input type="hidden" name="difficulty" id="f-diff">
+  <div class="card mb-3"><div class="card-body p-4">
+    <div class="mb-3"><label class="form-label">Quiz title</label><input name="title" id="f-title" class="form-control" maxlength="200" required></div>
+    <div><label class="form-label">Description (optional)</label><textarea name="description" id="f-desc" rows="2" class="form-control"></textarea></div>
+  </div></div>
+  <div id="questions"></div>
+  <button type="button" class="btn btn-outline-dark mb-3" id="add-q">+ Add question</button><br>
+  <button class="btn btn-brand btn-lg">Publish quiz</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script nonce="{{ csp_nonce }}">
+const wrap = document.getElementById('questions');
+let n = 0;
+function addQuestion(q) {
+  const id = ++n, card = document.createElement('div');
+  card.className = 'card mb-3 q-card';
+  card.innerHTML = `<div class="card-body">
+    <div class="d-flex justify-content-between"><strong>Question <span class="qnum"></span></strong>
+      <button type="button" class="btn btn-sm btn-outline-danger rm">Remove</button></div>
+    <input class="form-control my-2 q-text" placeholder="Question text" maxlength="500">
+    <div class="small text-muted mb-1">Type the options and select the correct one.</div>
+    ${[0,1,2,3].map(i => `<div class="input-group mb-1">
+        <div class="input-group-text"><input type="radio" name="c${id}" value="${i}" ${i===0?'checked':''}></div>
+        <input class="form-control q-opt" placeholder="Option ${i+1}" maxlength="200"></div>`).join('')}
+    <input class="form-control mt-2 q-expl" placeholder="Explanation shown after the quiz (optional)" maxlength="600">
+  </div>`;
+  if (q) {  // values are set as properties, never as HTML, so generated text can't inject markup
+    card.querySelector('.q-text').value = q.text;
+    card.querySelectorAll('.q-opt').forEach((o, i) => { o.value = q.options[i] || ''; });
+    card.querySelectorAll('input[type=radio]').forEach((r, i) => { r.checked = i === q.correct; });
+    card.querySelector('.q-expl').value = q.explanation || '';
+  }
+  card.querySelector('.rm').onclick = () => { card.remove(); renumber(); };
+  wrap.append(card); renumber();
+}
+function renumber() { wrap.querySelectorAll('.qnum').forEach((s, i) => s.textContent = i + 1); }
+document.getElementById('add-q').onclick = () => addQuestion();
+addQuestion();
+document.getElementById('quiz-form').addEventListener('submit', () => {
+  const data = [...wrap.querySelectorAll('.q-card')].map(c => ({
+    text: c.querySelector('.q-text').value,
+    options: [...c.querySelectorAll('.q-opt')].map(o => o.value),
+    correct: +c.querySelector('input[type=radio]:checked').value,
+    explanation: c.querySelector('.q-expl').value,
+  }));
+  document.getElementById('questions_json').value = JSON.stringify(data);
+});
+
+// ---- AI draft: the browser only ever talks to OUR server; the Gemini key never leaves it ----
+const go = document.getElementById('ai-go'), status = document.getElementById('ai-status');
+function say(msg, kind) { status.hidden = false; status.className = 'small mt-3 text-' + kind; status.textContent = msg; }
+go.addEventListener('click', async () => {
+  const topic = document.getElementById('ai-topic').value.trim();
+  if (topic.length < 3) { say('Enter a topic first.', 'danger'); return; }
+  const had = wrap.querySelectorAll('.q-text').length && [...wrap.querySelectorAll('.q-text')].some(i => i.value.trim());
+  if (had && !confirm('Replace the questions already on this page with the AI draft?')) return;
+  go.disabled = true; go.textContent = 'Generating…';
+  say('Asking the AI for questions. This can take up to a minute…', 'secondary');
+  try {
+    const r = await fetch({{ url_for('admin.generate_quiz')|tojson }}, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': {{ csrf_token()|tojson }}, 'X-Requested-With': 'fetch'},
+      body: JSON.stringify({topic, count: +document.getElementById('ai-count').value, difficulty: document.getElementById('ai-diff').value}),
+    });
+    const d = await r.json().catch(() => ({ok: false, error: 'The server sent an unexpected reply. Please try again.'}));
+    if (!r.ok || !d.ok) { say(d.error || 'Could not generate the quiz. Please try again.', 'danger'); return; }
+    wrap.innerHTML = ''; n = 0;
+    d.questions.forEach(addQuestion);
+    const title = document.getElementById('f-title');
+    if (!title.value.trim()) title.value = d.topic + ' quiz';
+    document.getElementById('f-source').value = 'ai';
+    document.getElementById('f-topic').value = d.topic;
+    document.getElementById('f-diff').value = d.difficulty;
+    say('Draft ready: ' + d.questions.length + ' questions. Review and edit below, then publish.', 'success');
+    document.getElementById('f-title').scrollIntoView({behavior: 'smooth', block: 'center'});
+  } catch (e) {
+    say('Could not reach the server. Check your connection and try again.', 'danger');
+  } finally { go.disabled = false; go.textContent = 'Generate'; }
+});
+</script>
+{% endblock %}

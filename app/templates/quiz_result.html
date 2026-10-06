@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Result · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="text-center mb-4">
+  <h2>{{ quiz.title }}</h2>
+  <div class="display-3 fw-bold">{{ attempt.score }} / {{ attempt.total }}</div>
+  <p class="fw-semibold mb-1">{{ attempt.score }} correct &middot; {{ attempt.total - attempt.score }} wrong &middot; {{ ((attempt.score * 100 / attempt.total)|round|int) if attempt.total else 0 }}%</p>
+  <p class="text-muted">Your result is saved. Here is how you did:</p>
+</div>
+{% for q in quiz.questions %}
+  {% set chosen = attempt.answers.get(q.id|string) %}
+  <div class="card shadow-sm border-0 rounded-4 mb-3"><div class="card-body">
+    <h6>{{ loop.index }}. {{ q.text }}
+      {% if chosen == q.correct_index %}<span class="badge bg-success">Correct</span>{% else %}<span class="badge bg-danger">Wrong</span>{% endif %}</h6>
+    <ul class="mb-0">
+      {% for opt in q.options %}
+      <li class="{{ 'text-success fw-bold' if loop.index0 == q.correct_index else ('text-danger' if loop.index0 == chosen else '') }}">
+        {{ opt }}{% if loop.index0 == q.correct_index %} ✓{% elif loop.index0 == chosen %} (your answer){% endif %}</li>
+      {% endfor %}
+    </ul>
+    {% if q.explanation %}<p class="small text-muted mt-2 mb-0"><strong>Why:</strong> {{ q.explanation }}</p>{% endif %}
+  </div></div>
+{% endfor %}
+<a href="{{ url_for('main.quizzes') }}" class="btn btn-brand">Back to quizzes</a>
+{% endblock %}

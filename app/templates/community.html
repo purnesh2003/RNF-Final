@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block title %}Community · {{ site_name }}{% endblock %}
+{% block body_class %}has-chat{% endblock %}
+{% block fab %}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1><svg class="i"><use href="#i-chat"/></svg>Community</h1><p>Talk with other members in the room that fits your interest.</p></div>
+  <div class="d-flex align-items-center gap-2">
+    <span id="status" class="badge bg-secondary">connecting…</span>
+  </div>
+</div>
+<div id="mode-banner" class="alert alert-warning py-2 small d-none" role="status"></div>
+{% if current_user.is_admin %}
+<div class="d-flex align-items-center gap-2 mb-2 small">
+  <label for="mode-select" class="mb-0 text-muted">Chat mode:</label>
+  <select id="mode-select" class="form-select form-select-sm w-auto">
+    <option value="open">Open</option><option value="slow">Slow</option><option value="admins">Admin only</option>
+  </select>
+</div>
+{% endif %}
+<ul class="nav nav-pills channel-tabs mb-2" id="channel-tabs" role="tablist">
+  {% for key, label in channels.items() %}
+  <li class="nav-item" role="presentation">
+    <button type="button" class="nav-link" role="tab" data-channel="{{ key }}">{{ label }}<span class="unread d-none" aria-label="new messages"></span></button>
+  </li>
+  {% endfor %}
+</ul>
+<div class="chat-box shadow-sm">
+  <div id="messages" class="chat-messages">
+    <div class="text-center my-2"><button id="older" class="btn btn-sm btn-outline-secondary d-none">Load older messages</button></div>
+  </div>
+  <form id="send-form" class="chat-input" autocomplete="off">
+    <label id="attach" class="btn btn-outline-secondary mb-0" title="Attach photo or file" aria-label="Attach photo or file"><svg class="i"><use href="#i-clip"/></svg>
+      <input type="file" id="file" hidden
+             accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.mp4">
+    </label>
+    <input id="text" class="form-control" maxlength="2000" enterkeyhint="send" placeholder="{% if current_user.muted %}You are muted by the admin{% else %}Type a message…{% endif %}" {{ 'disabled' if current_user.muted }}>
+    <button id="send-btn" class="btn btn-brand" {{ 'disabled' if current_user.muted }}>Send</button>
+  </form>
+</div>
+<p class="small text-muted mt-2">Videos (MP4) up to {{ config.MAX_VIDEO_MB }} MB; photos and files up to {{ config.MAX_UPLOAD_MB }} MB. Everything shared here is also saved in <a href="{{ url_for('main.documents') }}">Documents</a>. Be respectful — admins can mute or remove abusive members.</p>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
+<script nonce="{{ csp_nonce }}">
+const SLOW_SECONDS = {{ config.CHAT_SLOW_SECONDS }};
+const MUTED = {{ 'true' if current_user.muted else 'false' }}, INITIAL_MODE = {{ chat_mode|tojson }};
+const ME = {{ current_user.id }}, IS_ADMIN = {{ 'true' if current_user.is_admin else 'false' }};
+const csrf = document.querySelector('meta[name=csrf-token]').content;
+const box = document.getElementById('messages'), statusEl = document.getElementById('status');
+const older = document.getElementById('older');
+const form = document.getElementById('send-form'), text = document.getElementById('text'), fileIn = document.getElementById('file');
+const CHANNELS = {{ channels|tojson }};
+const MAX_MB = {{ config.MAX_UPLOAD_MB }}, MAX_VIDEO_MB = {{ config.MAX_VIDEO_MB }};
+let oldest = null, newest = 0;
+let channel = (location.hash || '').slice(1);
+if (!(channel in CHANNELS)) channel = 'general';
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+
+function render(m) {
+  const row = el('div', 'msg' + (m.user_id === ME ? ' mine' : ''));
+  row.dataset.id = m.id;
+  const head = el('div', 'msg-head');
+  head.append(el('strong', '', m.user), m.is_admin ? el('span', 'badge bg-warning text-dark ms-1', 'Admin') : '',
+              el('small', 'text-muted ms-2', new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})));
+  if (IS_ADMIN) {
+    const del = el('button', 'btn btn-link btn-sm text-danger p-0 ms-2', 'delete');
+    del.onclick = () => fetch(`/admin/messages/${m.id}/delete`, {method: 'POST', headers: {'X-CSRFToken': csrf}});
+    head.append(del);
+  }
+  row.append(head);
+  if (m.body) row.append(el('div', 'msg-body', m.body));          // textContent => no HTML injection
+  if (m.file) {
+    if (m.file.is_image) {
+      const a = el('a'); a.href = m.file.url; a.target = '_blank'; a.rel = 'noopener';
+      const img = el('img', 'msg-img'); img.src = m.file.url; img.alt = m.file.name; img.loading = 'lazy';
+      a.append(img); row.append(a);
+    } else if (m.file.is_video) {                       // videos play right in the chat, like a post
+      const v = el('video', 'msg-video'); v.src = m.file.url; v.controls = true; v.preload = 'metadata';
+      v.setAttribute('playsinline', ''); v.setAttribute('aria-label', m.file.name);
+      row.append(v);
+    } else {
+      const a = el('a', 'msg-file', m.file.name); a.href = m.file.url; a.target = '_blank'; a.rel = 'noopener';
+      row.append(a);
+    }
+  }
+  return row;
+}
+
+function nearBottom() { return box.scrollHeight - box.scrollTop - box.clientHeight < 120; }
+
+// add a live/caught-up message once (ignores duplicates after reconnects)
+function addLive(m) {
+  if (box.querySelector(`[data-id="${m.id}"]`)) return;
+  if ((m.channel || 'general') !== channel) { markUnread(m.channel || 'general'); return; }
+  const stick = nearBottom() || m.user_id === ME;
+  box.append(render(m));
+  newest = Math.max(newest, m.id);
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+
+function markUnread(ch) {
+  const dot = document.querySelector(`[data-channel="${ch}"] .unread`);
+  if (dot) dot.classList.remove('d-none');
+}
+function showChannel(ch) {
+  channel = ch; location.hash = ch;
+  document.querySelectorAll('#channel-tabs [data-channel]').forEach(b => {
+    const on = b.dataset.channel === ch;
+    b.classList.toggle('active', on); b.setAttribute('aria-selected', on);
+    if (on) b.querySelector('.unread').classList.add('d-none');
+  });
+  box.querySelectorAll('.msg').forEach(n => n.remove());
+  oldest = null; newest = 0; older.classList.add('d-none');
+  text.placeholder = MUTED ? text.placeholder : `Message #${CHANNELS[ch]}…`;
+  loadHistory();
+}
+async function loadHistory(before) {
+  const ch = channel;
+  const r = await fetch('/community/history?channel=' + ch + (before ? '&before=' + before : ''));
+  const list = await r.json();
+  if (ch !== channel) return;                         // the member switched tabs meanwhile
+  if (!list.length) { older.classList.add('d-none'); return; }
+  const prevH = box.scrollHeight;
+  const anchor = older.parentElement.nextSibling;
+  list.forEach(m => { if (!box.querySelector(`[data-id="${m.id}"]`)) box.insertBefore(render(m), anchor); });
+  oldest = list[0].id;
+  if (!before) newest = Math.max(newest, list[list.length - 1].id);
+  older.classList.toggle('d-none', list.length < 50);
+  box.scrollTop = before ? box.scrollHeight - prevH : box.scrollHeight;
+}
+older.onclick = () => loadHistory(oldest);
+
+// fetch anything posted while the phone was asleep / the network dropped
+async function catchUp() {
+  try {
+    const r = await fetch('/community/history?channel=' + channel + '&after=' + newest);
+    if (r.ok) (await r.json()).forEach(addLive);
+  } catch (e) { /* offline: will retry on next reconnect */ }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) catchUp(); });
+window.addEventListener('online', catchUp);
+
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  const body = text.value.trim();
+  if (!body) return;
+  if (!socket || !socket.connected) { alert('Not connected to live chat yet. Wait for the green "live" badge.'); return; }
+  socket.emit('send_message', {body, channel}, ack => { if (ack && !ack.ok) alert(ack.error); });
+  text.value = '';
+});
+
+async function postJSON(url, obj) {
+  const r = await fetch(url, {method: 'POST', headers: {'X-CSRFToken': csrf, 'Content-Type': 'application/json'}, body: JSON.stringify(obj)});
+  const j = await r.json().catch(() => ({ok: false, error: r.status === 413 ? `File too large (videos max ${MAX_VIDEO_MB} MB, others ${MAX_MB} MB).` : 'Request failed.'}));
+  return j;
+}
+async function uploadFile(file) {
+  const caption = text.value.trim();
+  const isVideo = /\.mp4$/i.test(file.name), limit = isVideo ? MAX_VIDEO_MB : MAX_MB;
+  if (file.size > limit * 1024 * 1024) throw new Error(`${isVideo ? 'Video' : 'File'} is too large (max ${limit} MB).`);
+  const cfg = await postJSON('/community/upload-url', {filename: file.name, size: file.size});
+  if (!cfg.ok) throw new Error(cfg.error);
+  if (cfg.mode === 'server') {                       // local / no S3: send the file through the server
+    const fd = new FormData(); fd.append('file', file); fd.append('caption', caption); fd.append('channel', channel);
+    const r = await fetch('/community/upload', {method: 'POST', headers: {'X-CSRFToken': csrf}, body: fd});
+    const j = await r.json().catch(() => ({ok: false, error: 'Upload failed.'}));
+    if (!j.ok) throw new Error(j.error);
+  } else {                                           // AWS: file goes straight to S3, not via our servers
+    const fd = new FormData();
+    Object.entries(cfg.fields).forEach(([k, v]) => fd.append(k, v));
+    fd.append('file', file);                         // must be the last field
+    const s3 = await fetch(cfg.url, {method: 'POST', body: fd});
+    if (!s3.ok) throw new Error('Upload to storage failed. Please try again.');
+    const done = await postJSON('/community/upload-complete', {token: cfg.token, caption, channel});
+    if (!done.ok) throw new Error(done.error);
+  }
+  text.value = '';
+}
+fileIn.addEventListener('change', async () => {
+  if (!fileIn.files.length) return;
+  statusEl.textContent = 'uploading…';
+  try { await uploadFile(fileIn.files[0]); }
+  catch (e) { alert(e.message); }
+  finally { fileIn.value = ''; statusEl.textContent = (socket && socket.connected) ? 'live' : 'connecting…'; }
+});
+
+// ---- chat mode (open / slow / admin only) ----
+const banner = document.getElementById('mode-banner'), sendBtn = document.getElementById('send-btn'), attach = document.getElementById('attach');
+const modeSelect = document.getElementById('mode-select');
+function applyMode(mode) {
+  const locked = MUTED || (mode === 'admins' && !IS_ADMIN);
+  text.disabled = locked; if (sendBtn) sendBtn.disabled = locked;
+  attach.classList.toggle('disabled', locked); fileIn.disabled = locked;
+  if (!MUTED) text.placeholder = locked ? 'Only the admin can post right now' : 'Type a message…';
+  const msg = {slow: `Slow mode is on: you can post once every ${SLOW_SECONDS} seconds.`,
+               admins: 'Announcement mode: only the admin can post right now.'}[mode];
+  banner.textContent = msg || ''; banner.classList.toggle('d-none', !msg);
+  if (modeSelect) modeSelect.value = mode;
+}
+applyMode(INITIAL_MODE);
+if (modeSelect) modeSelect.addEventListener('change', () =>
+  fetch('/admin/chat-mode', {method: 'POST', headers: {'X-CSRFToken': csrf, 'X-Requested-With': 'fetch', 'Content-Type': 'application/x-www-form-urlencoded'},
+                             body: 'mode=' + encodeURIComponent(modeSelect.value)}));
+
+document.querySelectorAll('#channel-tabs [data-channel]').forEach(b => b.addEventListener('click', () => showChannel(b.dataset.channel)));
+showChannel(channel);
+
+// ---- live connection (set up last so buttons above always work) ----
+let socket = null, wasConnected = false;
+if (typeof io === 'undefined') {
+  statusEl.textContent = 'chat library failed to load'; statusEl.className = 'badge bg-danger';
+} else {
+  socket = io({transports: ['websocket', 'polling']});
+  socket.on('connect', () => {
+    statusEl.textContent = 'live'; statusEl.className = 'badge bg-success';
+    if (wasConnected) catchUp();                     // reconnected: fill any gap
+    wasConnected = true;
+  });
+  socket.on('disconnect', () => { statusEl.textContent = 'reconnecting…'; statusEl.className = 'badge bg-secondary'; });
+  socket.on('connect_error', e => { statusEl.textContent = 'connection error'; statusEl.className = 'badge bg-danger'; console.error('socket error', e); });
+  socket.on('message', addLive);
+  socket.on('chat_mode', d => applyMode(d.mode));
+  socket.on('message_deleted', d => { const n = box.querySelector(`[data-id="${d.id}"]`); if (n) n.remove(); });
+}
+</script>
+{% endblock %}

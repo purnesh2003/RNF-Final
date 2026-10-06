@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Log in · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Log in</h1>
+    <p class="auth-sub">Welcome back. Log in to read every desk and join the community.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label" for="email">Email</label>
+        <input id="email" type="email" name="email" class="form-control" value="{{ email or '' }}" autocomplete="email" required autofocus></div>
+      <div class="mb-3"><label class="form-label" for="password">Password</label>
+        <input id="password" type="password" name="password" class="form-control" autocomplete="current-password" required></div>
+      <button class="btn btn-brand w-100 btn-lg">Log in</button>
+      <p class="form-text mt-2 mb-0">For your security you are logged out automatically after 1 hour.</p>
+    </form>
+    <div class="auth-foot">
+      <a href="{{ url_for('auth.forgot_password') }}">Forgot your password?</a>
+      <span>New here? <a href="{{ url_for('auth.register') }}">Create a free account</a></span>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{# Instagram-style post card. Needs: p, file_url, likes (dict), liked (set). #}
+{% set n_likes = likes.get(p.id, 0) %}
+<article class="ig-card{% if p.pinned %} ig-pinned{% endif %}" id="post-{{ p.id }}">
+  <header class="ig-head">
+    <img src="{{ url_for('static', filename='rakshith.jpg') }}" alt="" class="ig-avatar">
+    <div class="ig-who">
+      <strong>{{ p.author.name if p.author else site_name }}</strong>
+      <span class="ig-meta" title="{{ p.created_at.strftime('%d %b %Y, %H:%M') }} UTC">{{ p.created_at|timeago }} · {{ p.category_label }}{% if p.section != 'home' %} · {{ p.section_label }}{% endif %}{% if p.pinned %} · Pinned{% endif %}</span>
+    </div>
+    {% if current_user.is_admin %}
+    <div class="dropdown ms-auto">
+      <button class="btn btn-sm btn-light ig-more" data-bs-toggle="dropdown" aria-label="Post options" aria-expanded="false">&middot;&middot;&middot;</button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <form method="post" action="{{ url_for('admin.delete_post', post_id=p.id) }}" data-confirm="Delete this post?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+            <button class="dropdown-item text-danger"><svg class="i"><use href="#i-trash"/></svg>Delete post</button>
+          </form>
+        </li>
+      </ul>
+    </div>
+    {% endif %}
+  </header>
+
+  {% if p.file_key and p.is_media %}
+    {% set url = file_url(p.file_key, p.file_name, True) %}
+    <div class="ig-media">
+      {% if p.is_image %}<img src="{{ url }}" alt="{{ p.title }}" loading="lazy">
+      {% else %}<video src="{{ url }}" controls preload="metadata" playsinline></video>{% endif %}
+    </div>
+  {% endif %}
+
+  <div class="ig-actions">
+    {% if current_user.is_authenticated %}
+    <button type="button" class="ig-like{% if p.id in liked %} is-liked{% endif %}" data-url="{{ url_for('main.like_post', post_id=p.id) }}"
+            aria-pressed="{{ 'true' if p.id in liked else 'false' }}" aria-label="Like">
+      <span class="ig-heart" aria-hidden="true">{{ '♥' if p.id in liked else '♡' }}</span>
+    </button>
+    {% else %}
+    <a class="ig-like" href="{{ url_for('auth.login') }}" aria-label="Log in to like"><span class="ig-heart" aria-hidden="true">♡</span></a>
+    {% endif %}
+    <span class="ig-count"><span class="js-count">{{ n_likes }}</span> like<span class="js-plural">{{ '' if n_likes == 1 else 's' }}</span></span>
+  </div>
+
+  <div class="ig-caption{% if p.body|length > 180 or p.body.count('\n') > 2 %} clamped{% endif %}">
+    <div class="ig-text"><strong>{{ p.title }}</strong><br>{{ p.body }}</div>
+    {% if p.body|length > 180 or p.body.count('\n') > 2 %}<button type="button" class="ig-readmore">more</button>{% endif %}
+  </div>
+
+  {% if p.file_key and not p.is_media %}
+    <div class="ig-file">
+    {% if current_user.is_authenticated %}
+      <a class="btn btn-outline-secondary btn-sm" href="{{ file_url(p.file_key, p.file_name, False) }}" target="_blank" rel="noopener"><svg class="i"><use href="#i-clip"/></svg>{{ p.file_name }}</a>
+    {% else %}
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('auth.login') }}"><svg class="i"><use href="#i-lock"/></svg>Log in to download {{ p.file_name }}</a>
+    {% endif %}
+    </div>
+  {% endif %}
+</article>
