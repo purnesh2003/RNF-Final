@@ -246,7 +246,14 @@ def mailbox(ai_app, monkeypatch):
     sent = []
     import app.quiz_notify as qn
     monkeypatch.setattr(qn, "mail_configured", lambda: True)
-    monkeypatch.setattr(qn, "send_mail", lambda to, subj, text, html=None, bcc=None: sent.append((to, subj, text, bcc)) or True)
+    import app.notify as nt
+
+    def send_each(items):
+        for to, subj, text, html in items:
+            sent.append((to, subj, text, None))   # last slot = bcc: never used any more, one mail per member
+        return len(sent)
+
+    monkeypatch.setattr(nt.mailer, "send_each", send_each)
     return sent
 
 
@@ -263,6 +270,8 @@ def test_members_are_emailed_when_a_quiz_is_created(ai_app, client, mailbox):
     assert len(mailbox) == len(set(tos)) == 2          # one personal message each
     to, subject, text, bcc = next(m for m in mailbox if m[0] == "one.member@gmail.com")
     assert subject == "New quiz: AI quiz" and "/quizzes/1" in text and text.startswith("Hi One,") and not bcc
+    with ai_app.app_context():
+        assert Quiz.query.one().notified_at is not None
 
 
 def test_long_title_gives_short_subject(ai_app):
@@ -271,8 +280,6 @@ def test_long_title_gives_short_subject(ai_app):
     with ai_app.test_request_context():
         subject, _, _ = quiz_notify._compose(Q, "http://x/q")
     assert len(subject) < 90 and subject.endswith("...")
-    with ai_app.app_context():
-        assert Quiz.query.one().notified_at is not None
 
 
 def test_quiz_is_announced_only_once(ai_app, mailbox):
@@ -326,7 +333,13 @@ def post_mail(ai_app, monkeypatch):
     import app.notify as nt
     monkeypatch.setattr(nt.mailer, "mail_configured", lambda: True)
     monkeypatch.setattr(nt.mailer, "send_mail", lambda to, subj, text, html=None, bcc=None: sent.append((to, subj, text)) or True)
-    monkeypatch.setattr(nt.mailer, "send_each", lambda items: [sent.append((t, s, x)) for t, s, x, h in items] and len(sent))
+
+    def send_each(items):
+        for t, s, x, h in items:
+            sent.append((t, s, x))
+        return len(sent)
+
+    monkeypatch.setattr(nt.mailer, "send_each", send_each)
     ai_app.config.update(ADMIN_POST_EMAILS=True)
     return sent
 
