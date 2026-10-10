@@ -3,7 +3,10 @@
 {% block content %}
 <div class="page-head">
   <div><h1><svg class="i"><use href="#i-dash"/></svg>Admin dashboard</h1><p>Publish content, manage members and control the community chat.</p></div>
-  <a class="btn btn-brand" href="{{ url_for('admin.users_xlsx') }}"><svg class="i"><use href="#i-download"/></svg>Export members (Excel)</a>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin.analytics_page') }}"><svg class="i"><use href="#i-dash"/></svg>Analytics</a>
+    <a class="btn btn-brand" href="{{ url_for('admin.users_xlsx') }}"><svg class="i"><use href="#i-download"/></svg>Export members (Excel)</a>
+  </div>
 </div>
 
 <div class="row g-3 mb-4">

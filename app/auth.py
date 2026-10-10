@@ -19,6 +19,25 @@ def _reset_serializer():
     return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="password-reset")
 
 
+def _verify_serializer():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="email-verify")
+
+
+def _send_verification_email(user):
+    """E-mail the confirmation link. Returns (sent, dev_link); dev_link only when mail is not set up and DEV_SHOW_RESET_LINK is on."""
+    token = _verify_serializer().dumps({"uid": user.id, "email": user.email})
+    link = external_link("auth.verify_email", token=token)
+    hours = max(1, current_app.config["EMAIL_VERIFY_TTL"] // 3600)
+    site = current_app.config["SITE_NAME"]
+    text = (f"Hi {user.name},\n\nWelcome to {site}! Confirm your email to activate your account:\n{link}\n\n"
+            f"This link works for {hours} hours. If you did not sign up, you can ignore this email.\n")
+    html = (f"<p>Hi {escape(user.name)},</p><p>Welcome to {escape(site)}! Confirm your email to activate your account:</p>"
+            f"<p><a href=\"{escape(link, quote=True)}\">Confirm my email</a></p>"
+            f"<p>This link works for {hours} hours. If you did not sign up, you can ignore this email.</p>")
+    sent = send_mail(user.email, f"Confirm your email for {site}", text, html)
+    return sent, (link if (not sent and current_app.config["DEV_SHOW_RESET_LINK"]) else None)
+
+
 def _send_reset_email(user, token):
     """E-mail the reset link. Returns (sent, dev_link): dev_link is only set when mail could not be sent
     and DEV_SHOW_RESET_LINK is on (local testing), so the flow can still be tried without an inbox."""
@@ -69,12 +88,14 @@ def register():
             error = check_password(pw)
         elif pw != pw2:
             error = "Passwords do not match."
-        elif User.query.filter_by(email=email).first():
+        elif (existing := User.query.filter_by(email=email).first()) and existing.email_verified:
             error = "An account with this email already exists."
         if error:
             flash(error, "danger")
             return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, today=date.today().isoformat()), 400
-        user = User(name=name, email=email, dob=dob, occupation=occupation)
+        user = User.query.filter_by(email=email).first()  # an earlier, never-confirmed attempt may be re-used
+        user = user or User(email=email)
+        user.name, user.dob, user.occupation, user.email_verified = name, dob, occupation, False
         user.set_password(pw)
         db.session.add(user)
         try:
@@ -83,10 +104,16 @@ def register():
             db.session.rollback()
             flash("An account with this email already exists.", "danger")
             return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, today=date.today().isoformat()), 400
-        login_user(user)
-        start_login_clock()
-        flash("Welcome to the community!", "success")
-        return redirect(url_for("main.home"))
+        sent, dev_link = _send_verification_email(user)
+        if not sent and not dev_link:
+            db.session.delete(user)  # no confirmation mail went out, so do not keep an account nobody can activate
+            db.session.commit()
+            flash("We could not send the confirmation email right now. Please check the address and try again in a few minutes.", "danger")
+            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, today=date.today().isoformat()), 503
+        flash(f"Almost done! We sent a confirmation link to {email}. Open it to activate your account (check spam too).", "info")
+        if dev_link:
+            flash(f"Development confirmation link: {dev_link}", "warning")
+        return redirect(url_for("auth.login", email=email))
     return render_template("register.html", today=date.today().isoformat())
 
 
@@ -101,6 +128,9 @@ def login():
         email = request.form.get("email", "").strip().lower()
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(request.form.get("password", "")):
+            if not user.email_verified:
+                flash("Please confirm your email first: open the link we sent you.", "warning")
+                return render_template("login.html", email=email, unverified=True), 403
             if not user.active:
                 flash("This account has been suspended. Contact the admin.", "danger")
                 return render_template("login.html", email=email), 403
@@ -114,7 +144,50 @@ def login():
             return redirect(nxt if is_safe_redirect(nxt) else url_for("main.home"))
         flash("Wrong email or password.", "danger")
         return render_template("login.html", email=email), 401
-    return render_template("login.html")
+    return render_template("login.html", email=request.args.get("email", "")[:255])
+
+
+@bp.route("/verify-email/<token>")
+@limiter.limit("20 per hour")
+def verify_email(token):
+    try:
+        data = _verify_serializer().loads(token, max_age=current_app.config["EMAIL_VERIFY_TTL"])
+        user = db.session.get(User, int(data["uid"]))
+        if not user or user.email != data.get("email"):
+            raise BadSignature()
+    except (BadSignature, SignatureExpired, KeyError, TypeError, ValueError):
+        flash("That confirmation link is invalid or has expired. Enter your email below to get a new one.", "danger")
+        return redirect(url_for("auth.resend_verification"))
+    if not user.email_verified:
+        user.email_verified = True
+        db.session.commit()
+    if not user.active:
+        flash("This account has been suspended. Contact the admin.", "danger")
+        return redirect(url_for("auth.login"))
+    login_user(user)
+    from flask import session
+    session["_auth_version"] = user.session_version
+    start_login_clock()
+    user.last_login = datetime.now(timezone.utc)
+    db.session.commit()
+    flash("Email confirmed. Welcome to the community!", "success")
+    return redirect(url_for("main.home"))
+
+
+@bp.route("/resend-verification", methods=["GET", "POST"])
+@limiter.limit("5 per hour", methods=["POST"])
+def resend_verification():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()[:255]
+        user = User.query.filter_by(email=email, email_verified=False).first() if email else None
+        dev_link = None
+        if user:
+            _, dev_link = _send_verification_email(user)
+        flash("If that email is waiting for confirmation, a new link has been sent. Check your inbox and spam folder.", "info")
+        if dev_link:
+            flash(f"Development confirmation link: {dev_link}", "warning")
+        return redirect(url_for("auth.login", email=email))
+    return render_template("resend_verification.html")
 
 
 @bp.route("/forgot-password", methods=["GET", "POST"])
@@ -126,7 +199,7 @@ def forgot_password():
         # Always return the same user-facing result so the endpoint cannot be used
         # to enumerate registered email addresses.
         dev_link = None
-        if user and user.active:
+        if user and user.active and user.email_verified:
             payload = {"uid": user.id, "sv": user.session_version}
             token = _reset_serializer().dumps(payload)
             _, dev_link = _send_reset_email(user, token)

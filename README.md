@@ -5,7 +5,7 @@ A full-stack community platform built with **Python/Flask**, PostgreSQL, Redis, 
 ## What is already implemented
 
 - User registration (name, email, date of birth, occupation), login, logout and password change
-- Real e-mail addresses only: common providers (gmail.com, yahoo.com, outlook.com ...) are accepted, Gmail names are rule-checked
+- Sign-up needs a Gmail address and is activated only after the member clicks the confirmation link e-mailed to them (fake addresses never get an account)
 - Password rule: at least 12 characters with a letter, a number and a special character
 - Working "Forgot password" e-mail (Gmail SMTP App Password, any SMTP server, or Amazon SES)
 - Community split into 4 rooms (NASM, Investors, Traders, General); MP4 videos play inline (max 50 MB), photos/PDFs/Office files max 15 MB

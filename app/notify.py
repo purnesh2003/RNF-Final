@@ -11,7 +11,7 @@ from .models import User
 
 def members(exclude_ids=()):
     """[(name, email)] of every active member, optionally leaving some people out (e.g. the author)."""
-    q = db.session.query(User.name, User.email).filter_by(active=True)
+    q = db.session.query(User.name, User.email).filter_by(active=True, email_verified=True)
     if exclude_ids:
         q = q.filter(~User.id.in_(list(exclude_ids)))
     return [(n, e) for n, e in q.order_by(User.id).all() if e]

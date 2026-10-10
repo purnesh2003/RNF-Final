@@ -5,13 +5,9 @@ from flask import current_app
 
 MIN_PASSWORD = 12
 
-# Mailbox providers accepted by default (members mostly use these). Add company / college domains with
+# Sign-up accepts Gmail addresses by default. Add company / college domains with
 # EMAIL_ALLOWED_DOMAINS="gmail.com,acharya.ac.in", or set EMAIL_ALLOWED_DOMAINS="*" to accept any real-looking domain.
-DEFAULT_ALLOWED_DOMAINS = (
-    "gmail.com", "googlemail.com", "yahoo.com", "yahoo.in", "yahoo.co.in", "ymail.com",
-    "outlook.com", "outlook.in", "hotmail.com", "live.com", "msn.com",
-    "icloud.com", "me.com", "proton.me", "protonmail.com", "rediffmail.com", "zoho.com",
-)
+DEFAULT_ALLOWED_DOMAINS = ("gmail.com", "googlemail.com")  # Gmail only; the mailbox is then proven by the e-mailed confirmation link
 # Throw-away inboxes; only checked when the allow-list is switched off ("*").
 DISPOSABLE_DOMAINS = {
     "mailinator.com", "10minutemail.com", "guerrillamail.com", "tempmail.com", "temp-mail.org", "yopmail.com",

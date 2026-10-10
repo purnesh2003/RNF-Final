@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Confirm your email · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Confirm your email</h1>
+    <p class="auth-sub">Enter the Gmail address you signed up with and we will send a fresh confirmation link.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label" for="email">Email</label>
+        <input id="email" type="email" name="email" class="form-control" autocomplete="email" required autofocus></div>
+      <button class="btn btn-brand w-100 btn-lg">Send confirmation link</button>
+    </form>
+    <div class="auth-foot"><a href="{{ url_for('auth.login') }}">Back to log in</a></div>
+  </div>
+</div>
+{% endblock %}

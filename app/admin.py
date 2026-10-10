@@ -9,7 +9,7 @@ from flask import Blueprint, Response, abort, current_app, flash, jsonify, redir
 from flask_login import current_user
 from sqlalchemy import func
 
-from . import chatmode, gemini_quiz, notify, quiz_notify, storage
+from . import analytics, chatmode, gemini_quiz, notify, quiz_notify, storage
 from .extensions import db, limiter, socketio
 from .utils import is_safe_redirect
 from .models import Message, Poll, PollOption, PollVote, Post, PostLike, Question, Quiz, QuizAttempt, User
@@ -31,6 +31,14 @@ def dashboard():
     }
     recent = User.query.order_by(User.created_at.desc()).limit(8).all()
     return render_template("admin/dashboard.html", stats=stats, recent=recent, chat_mode=chatmode.get_mode())
+
+
+@bp.route("/analytics")
+@admin_required
+def analytics_page():
+    """Graphs of members, activity, occupations, quiz attendance and chat (read-only)."""
+    days = request.args.get("days", type=int) or analytics.DEFAULT_RANGE
+    return render_template("admin/analytics.html", data=analytics.build(days))
 
 
 @bp.route("/chat-mode", methods=["POST"])

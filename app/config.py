@@ -73,6 +73,7 @@ class Config:
     MAX_PASSWORD_LENGTH = int(os.environ.get("MAX_PASSWORD_LENGTH", 128))
 
     # Password reset / email. In AWS, use the ECS task IAM role with SES.
+    EMAIL_VERIFY_TTL = int(os.environ.get("EMAIL_VERIFY_TTL", 86400))  # sign-up confirmation link lifetime (seconds)
     PASSWORD_RESET_TTL = int(os.environ.get("PASSWORD_RESET_TTL", 3600))
     PASSWORD_RESET_EMAIL_FROM = os.environ.get("PASSWORD_RESET_EMAIL_FROM", "")
     # Optional fixed public address used in e-mailed links (e.g. https://community.example.com).
@@ -85,7 +86,7 @@ class Config:
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_USE_SSL = os.environ.get("SMTP_USE_SSL", "0") == "1"   # 1 for port 465; otherwise STARTTLS is used
     MAIL_FROM = os.environ.get("MAIL_FROM", "")
-    EMAIL_ALLOWED_DOMAINS = os.environ.get("EMAIL_ALLOWED_DOMAINS", "")  # empty = common providers; * = any domain
+    EMAIL_ALLOWED_DOMAINS = os.environ.get("EMAIL_ALLOWED_DOMAINS", "")  # empty = Gmail only; * = any domain
     DEV_SHOW_RESET_LINK = os.environ.get("DEV_SHOW_RESET_LINK", "1") == "1" and APP_ENV != "production"
     # AI quiz generator (Google Gemini). The key lives ONLY in the environment/.env; blank = feature off.
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")

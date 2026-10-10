@@ -1,6 +1,7 @@
 import io
 
 import pytest
+from itsdangerous import URLSafeTimedSerializer
 
 from app import create_app
 from app.config import Config
@@ -42,9 +43,16 @@ def client(app):
 
 
 def signup(c, email="member.a@gmail.com", pw="Password@12345", name="Asha", dob="1999-05-17", occupation="Engineer"):
-    return c.post("/register", data={"name": name, "email": email, "dob": dob, "occupation": occupation,
-                                     "password": pw, "confirm": pw},
-                  follow_redirects=True)
+    """Register AND confirm the email (as the member would by clicking the mailed link), so the member ends up logged in."""
+    r = c.post("/register", data={"name": name, "email": email, "dob": dob, "occupation": occupation,
+                                  "password": pw, "confirm": pw})
+    if r.status_code != 302:  # rejected by validation: show the form with its error like before
+        return c.post("/register", data={"name": name, "email": email, "dob": dob, "occupation": occupation,
+                                         "password": pw, "confirm": pw}, follow_redirects=True)
+    with c.application.app_context():
+        uid = User.query.filter_by(email=email.strip().lower()).one().id
+        token = URLSafeTimedSerializer("test", salt="email-verify").dumps({"uid": uid, "email": email.strip().lower()})
+    return c.get(f"/verify-email/{token}", follow_redirects=True)
 
 
 def login(c, email, pw):
@@ -562,3 +570,61 @@ def test_documents_page_lists_uploads(app, client):
         db.session.commit()
     html = client.get("/documents").get_data(as_text=True)
     assert "report.pdf" in html and "Investors" in html
+
+
+def _token(app, email, **kw):
+    with app.app_context():
+        u = User.query.filter_by(email=email).one()
+        return URLSafeTimedSerializer("test", salt="email-verify").dumps({"uid": u.id, "email": email}), u.id
+
+
+def test_signup_needs_email_confirmation(app, client):
+    data = {"name": "Asha", "email": "real.person@gmail.com", "dob": "1999-05-17", "occupation": "Engineer",
+            "password": "Password@12345", "confirm": "Password@12345"}
+    r = client.post("/register", data=data)
+    assert r.status_code == 302 and "/login" in r.headers["Location"]
+    with app.app_context():
+        assert User.query.filter_by(email="real.person@gmail.com").one().email_verified is False
+    r = login(client, "real.person@gmail.com", "Password@12345")
+    assert b"confirm your email" in r.data.lower() and b"Resend confirmation" in r.data
+    token, _ = _token(app, "real.person@gmail.com")
+    r = client.get(f"/verify-email/{token}", follow_redirects=True)
+    assert r.status_code == 200 and b"Email confirmed" in r.data
+    with app.app_context():
+        assert User.query.filter_by(email="real.person@gmail.com").one().email_verified is True
+    client.post("/logout")
+    assert b"Wrong email" not in login(client, "real.person@gmail.com", "Password@12345").data
+
+
+def test_only_gmail_allowed(app, client):
+    for bad in ("someone@yahoo.com", "someone@outlook.com", "x@mailinator.com", "abc@gmail.com"):
+        r = client.post("/register", data={"name": "A", "email": bad, "dob": "1999-05-17", "occupation": "E",
+                                           "password": "Password@12345", "confirm": "Password@12345"})
+        assert r.status_code == 400, bad
+    with app.app_context():
+        assert User.query.filter(User.email.in_(["someone@yahoo.com", "someone@outlook.com", "abc@gmail.com"])).count() == 0
+
+
+def test_bad_or_expired_confirmation_link(app, client):
+    r = client.get("/verify-email/not-a-token", follow_redirects=True)
+    assert b"invalid or has expired" in r.data
+    client.post("/register", data={"name": "A", "email": "late.joiner@gmail.com", "dob": "1999-05-17", "occupation": "E",
+                                   "password": "Password@12345", "confirm": "Password@12345"})
+    token, _ = _token(app, "late.joiner@gmail.com")
+    app.config["EMAIL_VERIFY_TTL"] = -1
+    assert b"invalid or has expired" in client.get(f"/verify-email/{token}", follow_redirects=True).data
+    with app.app_context():
+        assert User.query.filter_by(email="late.joiner@gmail.com").one().email_verified is False
+
+
+def test_resend_and_reregister_unconfirmed(app, client):
+    data = {"name": "A", "email": "again.user@gmail.com", "dob": "1999-05-17", "occupation": "E",
+            "password": "Password@12345", "confirm": "Password@12345"}
+    client.post("/register", data=data)
+    assert b"been sent" in client.post("/resend-verification", data={"email": "again.user@gmail.com"}, follow_redirects=True).data
+    assert client.post("/register", data={**data, "name": "B"}).status_code == 302  # unconfirmed address can be claimed again
+    with app.app_context():
+        assert User.query.filter_by(email="again.user@gmail.com").count() == 1
+    token, _ = _token(app, "again.user@gmail.com")
+    client.get(f"/verify-email/{token}")
+    assert client.post("/register", data=data).status_code == 400  # confirmed: now really taken

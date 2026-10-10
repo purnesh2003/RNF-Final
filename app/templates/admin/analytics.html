@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Analytics · Admin{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1><svg class="i"><use href="#i-dash"/></svg>Analytics</h1><p>Who is using the site, who is taking quizzes and what they do. Admin accounts are not counted. Updated {{ data.generated }}.</p></div>
+  <div class="btn-group" role="group" aria-label="Time range">
+    {% for d in data.ranges %}
+    <a class="btn btn-sm {{ 'btn-brand' if d == data.days else 'btn-outline-secondary' }}" href="{{ url_for('admin.analytics_page', days=d) }}">Last {{ d }} days</a>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for label, key, hint in [
+    ('Members', 'members', 'registered'),
+    ('Online now', 'online_now', 'chat connections on this server'),
+    ('Active today', 'active_24h', 'logged in, last 24 hours'),
+    ('Active this week', 'active_7d', 'logged in, last 7 days'),
+    ('Active this month', 'active_30d', 'logged in, last 30 days'),
+    ('New members', 'new_in_range', 'joined in this range'),
+    ('Chatted', 'chatters', 'members who posted in this range'),
+    ('Took a quiz', 'quiz_takers', 'members who took a quiz in this range')] %}
+  <div class="col-6 col-md-4 col-xl-3"><div class="trust-stat"><div class="trust-number">{{ data.cards[key] }}</div><div class="trust-label">{{ label }}<br><span class="small">{{ hint }}</span></div></div></div>
+  {% endfor %}
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-lg-6"><div class="panel h-100"><h2 class="panel-title">New members per day</h2><div class="chart" data-chart="signups"></div></div></div>
+  <div class="col-12 col-lg-6"><div class="panel h-100"><h2 class="panel-title">Chat messages per day</h2><div class="chart" data-chart="messages"></div></div></div>
+  <div class="col-12 col-lg-6"><div class="panel h-100"><h2 class="panel-title">When members were last here</h2><div class="chart" data-chart="last_seen"></div></div></div>
+  <div class="col-12 col-lg-6"><div class="panel h-100"><h2 class="panel-title">Chat messages by room (this range)</h2><div class="chart" data-chart="rooms"></div></div></div>
+  <div class="col-12"><div class="panel"><h2 class="panel-title">Members and quiz takers by occupation</h2>
+    <p class="small text-muted mb-2">Occupations are grouped from what members typed at sign-up (for example, "software developer" counts as Engineer). Quiz takers = members who have taken at least one quiz. Overall, {{ data.quiz_participation }}% of members have taken a quiz.</p>
+    <div class="chart" data-chart="occupations"></div></div></div>
+  <div class="col-12 col-lg-6"><div class="panel h-100"><h2 class="panel-title">Members by age</h2><div class="chart" data-chart="ages"></div></div></div>
+  <div class="col-12 col-lg-6"><div class="panel h-100"><h2 class="panel-title">Latest quizzes: attempts and average score</h2><div class="chart" data-chart="quizzes"></div></div></div>
+</div>
+<p class="small text-muted mt-3">"Active" means the member logged in during that time. Members stay logged in for one hour, so this is a good measure of real visits. "Online now" counts live chat connections on the server that answered this page.</p>
+
+<script type="application/json" id="analytics-data">{{ data|tojson }}</script>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='analytics.js') }}"></script>{% endblock %}
