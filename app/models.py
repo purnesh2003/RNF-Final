@@ -81,7 +81,7 @@ class Message(db.Model):
     user = db.relationship("User")
 
     # The community is split into these rooms (key -> label shown on the tabs). Order = tab order.
-    CHANNELS = {"nasm": "NASM", "investors": "Investors", "traders": "Traders", "general": "General"}
+    CHANNELS = {"nism": "NISM", "investors": "Investors", "traders": "Traders", "general": "General"}
     DEFAULT_CHANNEL = "general"
 
     def to_dict(self):
