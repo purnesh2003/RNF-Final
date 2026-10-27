@@ -7,6 +7,7 @@
     <p class="auth-sub">Takes a minute. We use these details to set up your membership.</p>
     <form method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="ref" value="{{ ref or '' }}">
       <div class="mb-3"><label class="form-label" for="name">Full name</label>
         <input id="name" name="name" class="form-control" value="{{ name or '' }}" maxlength="80" autocomplete="name" required autofocus></div>
       <div class="mb-3"><label class="form-label" for="email">Email</label>

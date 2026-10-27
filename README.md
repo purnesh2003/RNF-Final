@@ -209,3 +209,14 @@ Required GitHub environment values:
 ## Scope
 
 The current application includes the community platform features. Finance/news/market-data pages are not part of the core platform and should be added as separate modules if required.
+
+## Invite friends, publish later, search
+- **Invite friends** (user menu > Invite friends): each member gets a personal link; the page counts friends who signed up with it and confirmed their email.
+- **Publish later**: the admin "Create a post" and "Create quiz" forms have an optional date/time (`SCHEDULE_TZ`, default Asia/Kolkata). The item is hidden from members until then; members are e-mailed at that time. Manage it under Admin menu > Scheduled posts & quizzes (publish now / cancel). A small background thread started in `wsgi.py` does the publishing (turn off with `SCHEDULER_ENABLED=0`).
+- **Search** (nav > Search): searches posts, document file names and chat history.
+- Needs `flask db upgrade` (migration 0010).
+
+## Market updates (pre-market / post-market)
+Two buttons above the community chat show the latest **Pre-market update** and **Post-market update**. The admin writes them by hand
+(Admin menu > Market updates: pick the update and day, type the text, publish; Edit / Delete below). No AI or API key is involved.
+Members only read the saved text. Uses the `market_updates` table (migration 0011).

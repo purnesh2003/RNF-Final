@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Market updates · Admin{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-stocks"/></svg>Market updates</h1>
+  <p>Write the pre-market and post-market update here. Members read the latest one with the two buttons in the community chat.</p></div></div>
+
+<form method="post" class="card form-narrow mb-4"><div class="card-body p-4">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-3 mb-3">
+    <div class="col-md-6"><label class="form-label" for="mu-kind">Update</label>
+      <select id="mu-kind" name="kind" class="form-select">
+        {% for k, label in kinds.items() %}<option value="{{ k }}" {{ 'selected' if k == form.kind }}>{{ label }}</option>{% endfor %}
+      </select></div>
+    <div class="col-md-6"><label class="form-label" for="mu-date">For the day</label>
+      <input id="mu-date" type="date" name="for_date" class="form-control" value="{{ form.for_date }}" required></div>
+  </div>
+  <div class="mb-3"><label class="form-label" for="mu-body">Update text</label>
+    <textarea id="mu-body" name="body" rows="12" maxlength="{{ max_body }}" class="form-control" required>{{ form.body }}</textarea>
+    <div class="form-text">Tip: put a heading in CAPITAL LETTERS on its own line, then points that start with "- ". Example:<br>
+      <code>INDIAN MARKETS</code> then <code>- Nifty closed at ...</code>. Saving again for the same update and day replaces the old text.</div></div>
+  <button class="btn btn-brand">Publish update</button>
+</div></form>
+
+<h2 class="h5 mb-2">Recent updates</h2>
+<div class="table-responsive"><table class="table align-middle">
+  <thead><tr><th>Day</th><th>Type</th><th>Posted</th><th>Preview</th><th></th></tr></thead>
+  {% for r in rows %}<tr><td class="small text-nowrap">{{ r.for_date.strftime('%d %b %Y') }}</td><td>{{ kinds[r.kind] }}</td>
+    <td class="small text-nowrap">{{ when(r.created_at).strftime('%I:%M %p') }}</td>
+    <td class="small"><details><summary>{{ r.body[:90] }}{{ '…' if r.body|length > 90 }}</summary><pre class="mu-pre">{{ r.body }}</pre></details></td>
+    <td class="text-end text-nowrap">
+      <a class="btn btn-sm btn-outline-dark" href="{{ url_for('admin.market_updates', edit=r.id) }}">Edit</a>
+      <form method="post" action="{{ url_for('admin.market_update_delete', update_id=r.id) }}" class="d-inline" data-confirm="Delete this update?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Delete</button></form></td></tr>
+  {% else %}<tr><td colspan="5" class="text-muted">Nothing posted yet.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

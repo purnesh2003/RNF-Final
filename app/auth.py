@@ -71,6 +71,7 @@ def register():
         dob_raw = request.form.get("dob", "").strip()
         occupation = " ".join(request.form.get("occupation", "").split())[:100]
         pw, pw2 = request.form.get("password", ""), request.form.get("confirm", "")
+        ref = request.form.get("ref", "").strip().upper()[:12]
         error, dob = None, None
         try:
             dob = date.fromisoformat(dob_raw)
@@ -92,10 +93,13 @@ def register():
             error = "An account with this email already exists."
         if error:
             flash(error, "danger")
-            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, today=date.today().isoformat()), 400
+            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, ref=ref, today=date.today().isoformat()), 400
         user = User.query.filter_by(email=email).first()  # an earlier, never-confirmed attempt may be re-used
         user = user or User(email=email)
         user.name, user.dob, user.occupation, user.email_verified = name, dob, occupation, False
+        inviter = User.query.filter_by(referral_code=ref).first() if ref else None
+        if inviter and inviter.id != user.id and not user.referred_by_id:
+            user.referred_by_id = inviter.id  # counted for the inviter once this email is confirmed
         user.set_password(pw)
         db.session.add(user)
         try:
@@ -103,18 +107,18 @@ def register():
         except IntegrityError:  # two sign-ups with the same email at the same moment
             db.session.rollback()
             flash("An account with this email already exists.", "danger")
-            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, today=date.today().isoformat()), 400
+            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, ref=ref, today=date.today().isoformat()), 400
         sent, dev_link = _send_verification_email(user)
         if not sent and not dev_link:
             db.session.delete(user)  # no confirmation mail went out, so do not keep an account nobody can activate
             db.session.commit()
             flash("We could not send the confirmation email right now. Please check the address and try again in a few minutes.", "danger")
-            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, today=date.today().isoformat()), 503
+            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, ref=ref, today=date.today().isoformat()), 503
         flash(f"Almost done! We sent a confirmation link to {email}. Open it to activate your account (check spam too).", "info")
         if dev_link:
             flash(f"Development confirmation link: {dev_link}", "warning")
         return redirect(url_for("auth.login", email=email))
-    return render_template("register.html", today=date.today().isoformat())
+    return render_template("register.html", ref=request.args.get("ref", "").strip().upper()[:12], today=date.today().isoformat())
 
 
 @bp.route("/login", methods=["GET", "POST"])

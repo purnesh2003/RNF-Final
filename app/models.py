@@ -36,6 +36,8 @@ class User(UserMixin, db.Model):
     session_version = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
     last_login = db.Column(db.DateTime(timezone=True))
+    referral_code = db.Column(db.String(12), unique=True, index=True)  # this member's personal invite code (made on first use)
+    referred_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), index=True)  # who invited them (null = joined directly)
 
     @property
     def is_active(self):  # Flask-Login hook
@@ -81,7 +83,7 @@ class Message(db.Model):
     user = db.relationship("User")
 
     # The community is split into these rooms (key -> label shown on the tabs). Order = tab order.
-    CHANNELS = {"nism": "NISM", "investors": "Investors", "traders": "Traders", "general": "General"}
+    CHANNELS = {"nasm": "NASM", "investors": "Investors", "traders": "Traders", "general": "General"}
     DEFAULT_CHANNEL = "general"
 
     def to_dict(self):
@@ -121,7 +123,9 @@ class Post(db.Model):
     file_key = db.Column(db.String(200))
     file_name = db.Column(db.String(255))
     file_mime = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False, index=True)
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False, index=True)  # scheduled posts: = publish time
+    publish_at = db.Column(db.DateTime(timezone=True))   # set only for posts written ahead of time
+    notified_at = db.Column(db.DateTime(timezone=True))  # scheduled posts: set once members were e-mailed (never twice)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     author = db.relationship("User")
 
@@ -152,6 +156,24 @@ class Post(db.Model):
         return self.is_image or self.is_video
 
 
+def is_future(dt):
+    """True while a post/quiz time has not arrived yet (SQLite returns naive datetimes: they are UTC)."""
+    if dt is None:
+        return False
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt > utcnow()
+
+
+def post_is_live():
+    """SQL condition: the post/quiz has reached its publish time (always true for ordinary, immediate ones)."""
+    return Post.created_at <= utcnow()
+
+
+def quiz_is_live():
+    return Quiz.created_at <= utcnow()
+
+
 class PostLike(db.Model):
     """One like per member per post (enforced by the database)."""
     __tablename__ = "post_likes"
@@ -171,6 +193,7 @@ class Quiz(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
     topic = db.Column(db.String(200))            # AI quizzes: what it was generated about
     difficulty = db.Column(db.String(10))        # easy / medium / hard (AI quizzes)
+    publish_at = db.Column(db.DateTime(timezone=True))   # set only for quizzes written ahead of time (created_at = publish time)
     source = db.Column(db.String(10), nullable=False, default="manual")  # "manual" or "ai"
     notified_at = db.Column(db.DateTime(timezone=True))  # set once members were e-mailed (never twice)
     questions = db.relationship(
@@ -227,6 +250,19 @@ class PollVote(db.Model):
     poll_id = db.Column(db.Integer, db.ForeignKey("polls.id"), nullable=False, index=True)
     option_id = db.Column(db.Integer, db.ForeignKey("poll_options.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+
+
+class MarketUpdate(db.Model):
+    """One AI-written market briefing per session per day (kind = 'pre' before the open, 'post' after the close)."""
+    __tablename__ = "market_updates"
+    __table_args__ = (UniqueConstraint("kind", "for_date", name="uq_market_update_day"),)
+    id = db.Column(db.Integer, primary_key=True)
+    kind = db.Column(db.String(8), nullable=False, index=True)   # pre | post
+    for_date = db.Column(db.Date, nullable=False, index=True)     # the trading day (Indian date)
+    body = db.Column(db.Text, nullable=False)
+    sources = db.Column(db.JSON, nullable=False, default=list)    # [{"title":..., "url":...}] the briefing was grounded on
+    model = db.Column(db.String(60))
+    created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False, index=True)
 
 
 class Setting(db.Model):

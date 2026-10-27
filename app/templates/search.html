@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Search · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-folder"/></svg>Search</h1><p>Find posts, documents and chat messages.</p></div></div>
+<form method="get" action="{{ url_for('main.search') }}" class="row g-2 mb-4">
+  <div class="col-12 col-md-6"><input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search..." aria-label="Search" maxlength="100" autofocus></div>
+  <div class="col-6 col-md-3"><select name="in" class="form-select" aria-label="Search in">
+    {% for k, v in scopes.items() %}<option value="{{ k }}" {{ 'selected' if k == scope }}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-auto"><button class="btn btn-brand w-100">Search</button></div>
+</form>
+{% if too_short %}<p class="text-muted">Type at least 2 characters.</p>
+{% elif not q %}<p class="text-muted">Type a word or phrase to search.</p>
+{% elif not total %}<div class="empty"><svg class="i"><use href="#i-folder"/></svg><strong>No results for “{{ q }}”</strong><span>Try a different word, or search in Everything.</span></div>
+{% else %}
+{% if res.posts %}
+<h2 class="h5 mb-2">Posts <span class="text-muted fw-normal small">{{ res.posts|length }}{{ '+' if res.posts|length >= limit }}</span></h2>
+<div class="list-group mb-4">
+  {% for p in res.posts %}<a class="list-group-item list-group-item-action" href="{{ url_for(section_endpoints[p.section]) }}">
+    <div class="fw-semibold">{{ p.title }}</div>
+    <div class="small text-muted">{{ p.section_label }} · {{ p.created_at|timeago }}</div>
+    <div class="small">{{ p.body|truncate(180) }}</div></a>{% endfor %}
+</div>{% endif %}
+{% if res.documents %}
+<h2 class="h5 mb-2">Documents <span class="text-muted fw-normal small">{{ res.documents|length }}{{ '+' if res.documents|length >= limit }}</span></h2>
+<div class="list-group mb-4">
+  {% for d in res.documents %}<a class="list-group-item list-group-item-action" href="{{ d.url }}" target="_blank" rel="noopener">
+    <div class="fw-semibold"><svg class="i"><use href="#i-file"/></svg> {{ d.name }}</div>
+    <div class="small text-muted">{{ d.where }} · {{ d.created_at|timeago }}</div></a>{% endfor %}
+</div>{% endif %}
+{% if res.chat %}
+<h2 class="h5 mb-2">Chat <span class="text-muted fw-normal small">{{ res.chat|length }}{{ '+' if res.chat|length >= limit }}</span></h2>
+<div class="list-group mb-4">
+  {% for m in res.chat %}<a class="list-group-item list-group-item-action" href="{{ url_for('community.chat') }}#{{ m.channel }}">
+    <div class="small text-muted">{{ m.user.name }} · {{ channels.get(m.channel, 'General') }} chat · {{ m.created_at|timeago }}</div>
+    <div>{{ m.body|truncate(220) }}</div></a>{% endfor %}
+</div>{% endif %}
+{% endif %}
+{% endblock %}

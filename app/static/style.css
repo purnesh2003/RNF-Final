@@ -363,3 +363,13 @@ img, video { max-width: 100%; height: auto; }
 .donut-wrap { display: grid; grid-template-columns: minmax(130px, 200px) 1fr; gap: 1rem; align-items: center; }
 .donut-wrap .chart-legend { flex-direction: column; margin: 0; }
 @media (max-width: 575.98px) { .donut-wrap { grid-template-columns: 1fr; justify-items: center; } }
+
+/* Market update buttons + panel in the community chat */
+.mu-panel{background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:12px;padding:14px 16px;margin-bottom:10px;max-height:55vh;overflow:auto}
+.mu-panel h2{font-size:1rem;margin:0 0 2px}
+.mu-panel .mu-meta{font-size:.78rem;color:#6b7280;margin-bottom:8px}
+.mu-panel .mu-head{font-weight:700;font-size:.8rem;letter-spacing:.04em;margin-top:10px}
+.mu-panel ul{margin:2px 0 0;padding-left:1.1rem}
+.mu-panel .mu-foot{font-size:.75rem;color:#6b7280;margin-top:10px;border-top:1px solid rgba(0,0,0,.08);padding-top:8px}
+.mu-panel .mu-stale{font-size:.8rem}
+.mu-pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;margin:6px 0 0}

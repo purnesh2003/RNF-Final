@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Scheduled · Admin{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-pin"/></svg>Scheduled</h1><p>Posts and quizzes waiting for their publish time ({{ tz }} time). Members cannot see them yet.</p></div></div>
+<h2 class="h5 mb-2">Posts</h2>
+<div class="table-responsive mb-4"><table class="table align-middle">
+  <thead><tr><th>Publishes</th><th>Title</th><th>Where</th><th></th></tr></thead>
+  {% for p in posts %}<tr><td class="small">{{ when(p.created_at).strftime('%d %b %Y, %I:%M %p') }}</td><td>{{ p.title }}</td><td class="small">{{ p.section_label }}</td>
+    <td class="text-end text-nowrap">
+      <form method="post" action="{{ url_for('admin.scheduled_action', kind='post', item_id=p.id, action='now') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-dark">Publish now</button></form>
+      <form method="post" action="{{ url_for('admin.scheduled_action', kind='post', item_id=p.id, action='cancel') }}" class="d-inline" data-confirm="Cancel this scheduled post?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Cancel</button></form></td></tr>
+  {% else %}<tr><td colspan="4" class="text-muted">No scheduled posts.</td></tr>{% endfor %}
+</table></div>
+<h2 class="h5 mb-2">Quizzes</h2>
+<div class="table-responsive mb-4"><table class="table align-middle">
+  <thead><tr><th>Opens</th><th>Title</th><th>Questions</th><th></th></tr></thead>
+  {% for q in quizzes %}<tr><td class="small">{{ when(q.created_at).strftime('%d %b %Y, %I:%M %p') }}</td><td>{{ q.title }}</td><td>{{ q.questions|length }}</td>
+    <td class="text-end text-nowrap">
+      <form method="post" action="{{ url_for('admin.scheduled_action', kind='quiz', item_id=q.id, action='now') }}" class="d-inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-dark">Publish now</button></form>
+      <form method="post" action="{{ url_for('admin.scheduled_action', kind='quiz', item_id=q.id, action='cancel') }}" class="d-inline" data-confirm="Cancel this scheduled quiz?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Cancel</button></form></td></tr>
+  {% else %}<tr><td colspan="4" class="text-muted">No scheduled quizzes.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

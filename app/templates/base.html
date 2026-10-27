@@ -74,6 +74,7 @@
           <li class="nav-item"><a class="nav-link{{ ' active' if ep == 'main.mutual_funds' }}" href="{{ url_for('main.mutual_funds') }}">Mutual Funds</a></li>
           <li class="nav-item"><a class="nav-link{{ ' active' if ep == 'main.stocks' }}" href="{{ url_for('main.stocks') }}">Stocks</a></li>
           <li class="nav-item"><a class="nav-link{{ ' active' if ep.startswith('community.') }}" href="{{ url_for('community.chat') }}">Community</a></li>
+          <li class="nav-item"><a class="nav-link{{ ' active' if ep == 'main.search' }}" href="{{ url_for('main.search') }}">Search</a></li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle{{ ' active' if ep in ('main.documents','main.quizzes','main.polls') }}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">More</a>
             <ul class="dropdown-menu">
@@ -95,6 +96,7 @@
             <ul class="dropdown-menu dropdown-menu-end">
               <li class="dropdown-header">{{ current_user.email }}</li>
               {% if current_user.is_admin %}<li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><svg class="i"><use href="#i-dash"/></svg>Admin dashboard</a></li>{% endif %}
+              <li><a class="dropdown-item" href="{{ url_for('main.invite') }}"><svg class="i"><use href="#i-users"/></svg>Invite friends</a></li>
               <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}"><svg class="i"><use href="#i-key"/></svg>Change password</a></li>
               <li><hr class="dropdown-divider"></li>
               <li>

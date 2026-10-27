@@ -15,5 +15,9 @@ from app import metrics  # noqa: E402
 
 metrics.start_publisher(app)  # no-op unless CLOUDWATCH_METRICS=1 (set on AWS)
 
+from app import scheduler  # noqa: E402
+
+scheduler.start(app)  # announces posts/quizzes scheduled for later when their time comes
+
 if __name__ == "__main__":  # local development: python wsgi.py
     socketio.run(app, host="0.0.0.0", port=8000, debug=False)

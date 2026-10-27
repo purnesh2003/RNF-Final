@@ -10,6 +10,11 @@
   </div>
 </div>
 <div id="mode-banner" class="alert alert-warning py-2 small d-none" role="status"></div>
+<div class="mu-bar d-flex flex-wrap gap-2 mb-2" id="mu-bar">
+  <button type="button" class="btn btn-sm btn-outline-dark" data-mu="pre" aria-expanded="false" aria-controls="mu-panel">&#9728;&#65039; Pre-market update</button>
+  <button type="button" class="btn btn-sm btn-outline-dark" data-mu="post" aria-expanded="false" aria-controls="mu-panel">&#127769; Post-market update</button>
+</div>
+<div id="mu-panel" class="mu-panel d-none" role="region" aria-live="polite"></div>
 {% if current_user.is_admin %}
 <div class="d-flex align-items-center gap-2 mb-2 small">
   <label for="mode-select" class="mb-0 text-muted">Chat mode:</label>
@@ -42,6 +47,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='market.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
 <script nonce="{{ csp_nonce }}">
 const SLOW_SECONDS = {{ config.CHAT_SLOW_SECONDS }};

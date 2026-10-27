@@ -1,7 +1,7 @@
 """Admin area: dashboard, user management, quizzes, polls, opinions, moderation."""
 import csv
 import io
-from datetime import date, timezone
+from datetime import date, timedelta, timezone
 import json
 import secrets
 
@@ -9,10 +9,10 @@ from flask import Blueprint, Response, abort, current_app, flash, jsonify, redir
 from flask_login import current_user
 from sqlalchemy import func
 
-from . import analytics, chatmode, gemini_quiz, notify, quiz_notify, storage
+from . import analytics, chatmode, gemini_quiz, market_update, notify, quiz_notify, scheduler, storage
 from .extensions import db, limiter, socketio
 from .utils import is_safe_redirect
-from .models import Message, Poll, PollOption, PollVote, Post, PostLike, Question, Quiz, QuizAttempt, User
+from .models import MarketUpdate, Message, Poll, PollOption, PollVote, Post, PostLike, Question, Quiz, QuizAttempt, User, is_future, utcnow
 from .utils import admin_required
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -223,8 +223,14 @@ def new_post():
         category = request.form.get("category", "news")
         if category not in Post.CATEGORIES:
             category = "news"
+        when, when_err = scheduler.parse_publish_at(request.form.get("publish_at"))
+        if when_err:
+            flash(when_err, "danger")
+            return render_template("admin/new_post.html", **_post_form(section)), 400
         post = Post(title=title, body=body, author_id=current_user.id, category=category, section=section,
                     pinned=request.form.get("pinned") == "1")
+        if when:  # written now, shown (and e-mailed) at the chosen time
+            post.publish_at = post.created_at = when
         file = request.files.get("file")
         if file and file.filename:
             ok, err, ext = storage.validate(file)
@@ -239,6 +245,9 @@ def new_post():
             post.file_key, post.file_name, post.file_mime = saved["key"], saved["name"], saved["mime"]
         db.session.add(post)
         db.session.commit()
+        if when:
+            flash(f"Scheduled for {scheduler.to_local(when).strftime('%d %b %Y, %I:%M %p')}. It will appear then.", "success")
+            return redirect(url_for("admin.scheduled"))
         notify.announce_post(post)  # e-mails members; never blocks or fails the page
         flash(f"Published to {Post.SECTIONS[section].split(' ', 1)[1]}.", "success")
         from .main import SECTION_ENDPOINTS
@@ -298,6 +307,8 @@ def new_quiz():
         parsed, err = _parse_questions(request.form.get("questions_json"))
         if not title:
             err = "Give the quiz a title."
+        when, when_err = scheduler.parse_publish_at(request.form.get("publish_at"))
+        err = err or when_err
         if err:
             flash(err, "danger")
             return render_template("admin/new_quiz.html", ai_ready=_ai_ready(), max_q=current_app.config["QUIZ_MAX_QUESTIONS"]), 400
@@ -307,10 +318,15 @@ def new_quiz():
             quiz.topic = request.form.get("topic", "").strip()[:200] or None
             diff = request.form.get("difficulty", "").strip().lower()
             quiz.difficulty = diff if diff in gemini_quiz.DIFFICULTIES else None
+        if when:  # written now, opens (and is e-mailed) at the chosen time
+            quiz.publish_at = quiz.created_at = when
         quiz.questions = [Question(text=t, options=o, correct_index=c, explanation=x or None)
                           for t, o, c, x in parsed]
         db.session.add(quiz)
         db.session.commit()
+        if when:
+            flash(f"Quiz scheduled for {scheduler.to_local(when).strftime('%d %b %Y, %I:%M %p')}. It will open then.", "success")
+            return redirect(url_for("admin.scheduled"))
         started = quiz_notify.announce_quiz(quiz.id)  # e-mails members once; never raises into the page
         flash("Quiz published." + (" Members are being notified by e-mail." if started else ""), "success")
         return redirect(url_for("main.quizzes"))
@@ -364,6 +380,80 @@ def leaderboard(quiz_id):
     rows = QuizAttempt.query.filter_by(quiz_id=quiz.id).order_by(
         QuizAttempt.score.desc(), QuizAttempt.created_at).all()
     return render_template("admin/leaderboard.html", quiz=quiz, rows=rows)
+
+
+# ---------------------------------------------------------------- scheduled (publish later)
+@bp.route("/scheduled")
+@admin_required
+def scheduled():
+    """Posts and quizzes waiting for their publish time."""
+    now = utcnow()
+    posts = Post.query.filter(Post.publish_at.isnot(None), Post.created_at > now).order_by(Post.created_at).all()
+    quizzes = Quiz.query.filter(Quiz.publish_at.isnot(None), Quiz.created_at > now).order_by(Quiz.created_at).all()
+    return render_template("admin/scheduled.html", posts=posts, quizzes=quizzes, when=scheduler.to_local,
+                           tz=current_app.config["SCHEDULE_TZ"])
+
+
+@bp.route("/scheduled/<kind>/<int:item_id>/<action>", methods=["POST"])
+@admin_required
+def scheduled_action(kind, item_id, action):
+    model = {"post": Post, "quiz": Quiz}.get(kind) or abort(404)
+    item = db.get_or_404(model, item_id)
+    if item.publish_at is None or not is_future(item.created_at):
+        flash("That item is already published.", "info")
+        return redirect(url_for("admin.scheduled"))
+    if action == "cancel":
+        if kind == "quiz":
+            QuizAttempt.query.filter_by(quiz_id=item.id).delete()
+        db.session.delete(item)
+        flash("Scheduled item cancelled.", "success")
+    elif action == "now":
+        item.created_at = utcnow()  # it goes live immediately; the scheduler e-mails members within a minute
+        flash("Published now. Members are being notified by e-mail." if current_app.config.get("ADMIN_POST_EMAILS") else "Published now.", "success")
+    else:
+        abort(404)
+    db.session.commit()
+    return redirect(url_for("admin.scheduled"))
+
+
+# ---------------------------------------------------------------- market updates (written by the admin)
+@bp.route("/market-updates", methods=["GET", "POST"])
+@admin_required
+def market_updates():
+    """Write / edit the pre-market and post-market updates that members read with the buttons in the chat."""
+    today = market_update.today_local()
+    form = {"kind": request.args.get("kind", "pre"), "for_date": today.isoformat(), "body": ""}
+    edit_id = request.args.get("edit", type=int)
+    if edit_id and (row := db.session.get(MarketUpdate, edit_id)):
+        form = {"kind": row.kind, "for_date": row.for_date.isoformat(), "body": row.body}
+    if request.method == "POST":
+        form = {"kind": request.form.get("kind", "pre"), "for_date": request.form.get("for_date", ""),
+                "body": request.form.get("body", "")}
+        try:
+            day = date.fromisoformat(form["for_date"])
+        except ValueError:
+            day = None
+        if day and (day > today + timedelta(days=1) or day < today - timedelta(days=30)):
+            day = None
+        row, err, replaced = market_update.save(form["kind"], day, form["body"])
+        if err:
+            flash(err, "danger")
+        else:
+            flash(f"{market_update.KINDS[row.kind]} {'updated' if replaced else 'published'}. Members can read it from the chat button now.", "success")
+            return redirect(url_for("admin.market_updates"))
+    rows = MarketUpdate.query.order_by(MarketUpdate.for_date.desc(), MarketUpdate.id.desc()).limit(20).all()
+    return render_template("admin/market_updates.html", rows=rows, kinds=market_update.KINDS, form=form, today=today,
+                           when=scheduler.to_local, max_body=market_update.MAX_BODY), (400 if request.method == "POST" else 200)
+
+
+@bp.route("/market-updates/<int:update_id>/delete", methods=["POST"])
+@admin_required
+def market_update_delete(update_id):
+    """Remove an update; members then see the previous one."""
+    db.session.delete(db.get_or_404(MarketUpdate, update_id))
+    db.session.commit()
+    flash("Update deleted.", "success")
+    return redirect(url_for("admin.market_updates"))
 
 
 # ---------------------------------------------------------------- polls

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Invite friends · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-users"/></svg>Invite friends</h1><p>Share your personal link. When a friend signs up with it and confirms their email, they show up here.</p></div></div>
+<div class="card form-narrow mb-4"><div class="card-body p-4">
+  <label class="form-label" for="invite-link">Your invite link</label>
+  <div class="input-group mb-3">
+    <input id="invite-link" class="form-control" value="{{ link }}" readonly>
+    <button type="button" class="btn btn-brand" id="copy-invite">Copy</button>
+  </div>
+  <a class="btn btn-outline-dark" href="https://wa.me/?text={{ share }}" target="_blank" rel="noopener">Share on WhatsApp</a>
+  <div class="form-text mt-2">Your code: <strong>{{ code }}</strong></div>
+</div></div>
+<div class="d-flex gap-4 mb-3 flex-wrap">
+  <div><div class="display-6 fw-bold">{{ joined|length }}</div><div class="text-muted small">friend{{ '' if joined|length == 1 else 's' }} joined</div></div>
+  {% if waiting %}<div><div class="display-6 fw-bold">{{ waiting }}</div><div class="text-muted small">waiting to confirm email</div></div>{% endif %}
+</div>
+{% if joined %}
+<div class="table-responsive"><table class="table align-middle">
+  <thead><tr><th>Friend</th><th>Joined</th></tr></thead>
+  {% for u in joined %}<tr><td>{{ u.name.split()[0] }}</td><td class="small">{{ u.created_at.strftime('%d %b %Y') }}</td></tr>{% endfor %}
+</table></div>
+{% else %}
+<div class="empty"><svg class="i"><use href="#i-users"/></svg><strong>No one has joined yet</strong><span>Send your link to a friend to get started.</span></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='invite.js') }}"></script>{% endblock %}

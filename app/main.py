@@ -1,6 +1,8 @@
 """Public home page, health checks, private file serving, and member-facing
 opinions / quizzes / polls."""
 import os
+import secrets
+from urllib.parse import quote
 
 from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
@@ -8,7 +10,8 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from .extensions import csrf, db, limiter
-from .models import Message, Poll, PollOption, PollVote, Post, PostLike, Quiz, QuizAttempt
+from .models import Message, Poll, PollOption, PollVote, Post, PostLike, Quiz, QuizAttempt, User, is_future, post_is_live, quiz_is_live
+from .mailer import external_link
 from .storage import KEY_RE, file_url
 
 bp = Blueprint("main", __name__)
@@ -32,6 +35,8 @@ def _feed_meta(posts):
 @limiter.limit("60 per minute")
 def like_post(post_id):
     post = db.get_or_404(Post, post_id)
+    if is_future(post.created_at):  # still scheduled
+        abort(404)
     existing = PostLike.query.filter_by(post_id=post.id, user_id=current_user.id).first()
     if existing:
         db.session.delete(existing)
@@ -50,16 +55,16 @@ def like_post(post_id):
 @bp.route("/")
 def home():
     page = request.args.get("page", 1, type=int)
-    posts = Post.query.filter_by(section="home").order_by(Post.pinned.desc(), Post.created_at.desc()).paginate(
+    posts = Post.query.filter_by(section="home").filter(post_is_live()).order_by(Post.pinned.desc(), Post.created_at.desc()).paginate(
         page=page, per_page=8, error_out=False)
     likes, liked = _feed_meta(posts.items)
     # newest headline of the News / Mutual Funds cards
-    latest = {k: Post.query.filter_by(section=k).order_by(Post.created_at.desc()).first()
+    latest = {k: Post.query.filter_by(section=k).filter(post_is_live()).order_by(Post.created_at.desc()).first()
               for k in ("news", "mutual_funds")}
     # the Quiz card: newest open quiz and (for members) whether they already took it
     latest_quiz = quiz_attempt = None
     if current_user.is_authenticated:
-        latest_quiz = Quiz.query.filter_by(is_open=True).order_by(Quiz.created_at.desc(), Quiz.id.desc()).first()
+        latest_quiz = Quiz.query.filter_by(is_open=True).filter(quiz_is_live()).order_by(Quiz.created_at.desc(), Quiz.id.desc()).first()
         if latest_quiz:
             quiz_attempt = QuizAttempt.query.filter_by(quiz_id=latest_quiz.id, user_id=current_user.id).first()
     return render_template("home.html", posts=posts, file_url=file_url, likes=likes, liked=liked, latest=latest,
@@ -97,7 +102,7 @@ def serve_file(key):
     ext = key.rsplit(".", 1)[-1]
     inline = ext in current_app.config["IMAGE_EXTENSIONS"] or ext in ("mp4", "pdf")  # PDFs open in the browser tab
     if not current_user.is_authenticated:
-        public = ext != "pdf" and inline and Post.query.filter_by(file_key=key).first() is not None
+        public = ext != "pdf" and inline and Post.query.filter_by(file_key=key).filter(post_is_live()).first() is not None
         if not public:
             return current_app.login_manager.unauthorized()
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], key, as_attachment=not inline)
@@ -114,7 +119,7 @@ SECTION_PAGES = {
 def _section_view(section):
     title, icon, blurb = SECTION_PAGES[section]
     page = request.args.get("page", 1, type=int)
-    posts = Post.query.filter_by(section=section).order_by(Post.pinned.desc(), Post.created_at.desc()).paginate(
+    posts = Post.query.filter_by(section=section).filter(post_is_live()).order_by(Post.pinned.desc(), Post.created_at.desc()).paginate(
         page=page, per_page=10, error_out=False)
     likes, liked = _feed_meta(posts.items)
     return render_template("section.html", posts=posts, file_url=file_url, likes=likes, liked=liked,
@@ -169,7 +174,7 @@ def documents():
     page = max(request.args.get("page", 1, type=int) or 1, 1)
     per_page = 24
 
-    pq = Post.query.filter(Post.file_key.isnot(None))
+    pq = Post.query.filter(Post.file_key.isnot(None), post_is_live())
     mq = Message.query.filter(Message.file_key.isnot(None), Message.deleted.is_(False))
     if _type_filter(Post.file_mime, kind) is not None:
         pq, mq = pq.filter(_type_filter(Post.file_mime, kind)), mq.filter(_type_filter(Message.file_mime, kind))
@@ -209,7 +214,7 @@ def documents():
 @login_required
 def opinions():
     page = request.args.get("page", 1, type=int)
-    posts = Post.query.order_by(Post.pinned.desc(), Post.created_at.desc()).paginate(
+    posts = Post.query.filter(post_is_live()).order_by(Post.pinned.desc(), Post.created_at.desc()).paginate(
         page=page, per_page=10, error_out=False)
     likes, liked = _feed_meta(posts.items)
     return render_template("feed.html", posts=posts, file_url=file_url, likes=likes, liked=liked)
@@ -219,7 +224,7 @@ def opinions():
 @bp.route("/quizzes")
 @login_required
 def quizzes():
-    quizzes = Quiz.query.order_by(Quiz.created_at.desc()).all()
+    quizzes = Quiz.query.filter(quiz_is_live()).order_by(Quiz.created_at.desc()).all()
     done = {a.quiz_id: a for a in QuizAttempt.query.filter_by(user_id=current_user.id)}
     return render_template("quizzes.html", quizzes=quizzes, done=done)
 
@@ -229,6 +234,8 @@ def quizzes():
 @limiter.limit("20 per hour", methods=["POST"])
 def take_quiz(quiz_id):
     quiz = db.get_or_404(Quiz, quiz_id)
+    if is_future(quiz.created_at):  # scheduled for later: not available yet
+        abort(404)
     attempt = QuizAttempt.query.filter_by(quiz_id=quiz.id, user_id=current_user.id).first()
     if attempt:
         return render_template("quiz_result.html", quiz=quiz, attempt=attempt)
@@ -294,3 +301,103 @@ def vote(poll_id):
             db.session.rollback()
             flash("You have already voted in this poll.", "info")
     return redirect(url_for("main.polls") + f"#poll-{poll.id}")
+
+
+# ---------------------------------------------------------------- invite friends (referral link)
+_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # no look-alikes (0/O, 1/I)
+
+
+def _referral_code(user):
+    """The member's personal invite code; created the first time it is needed."""
+    if not user.referral_code:
+        for _ in range(10):
+            code = "".join(secrets.choice(_CODE_CHARS) for _ in range(8))
+            if not User.query.filter_by(referral_code=code).first():
+                user.referral_code = code
+                try:
+                    db.session.commit()
+                    break
+                except IntegrityError:
+                    db.session.rollback()
+    return user.referral_code
+
+
+@bp.route("/invite")
+@login_required
+def invite():
+    code = _referral_code(current_user)
+    link = external_link("auth.register", ref=code)
+    joined = User.query.filter_by(referred_by_id=current_user.id, email_verified=True).order_by(User.created_at.desc()).all()
+    waiting = User.query.filter_by(referred_by_id=current_user.id, email_verified=False).count()
+    site = current_app.config["SITE_NAME"]
+    share = quote(f"Join me on {site}: free market insights and a friendly community. Sign up here: {link}")
+    return render_template("invite.html", link=link, code=code, joined=joined, waiting=waiting, share=share)
+
+
+# ---------------------------------------------------------------- search (posts, documents, chat)
+SEARCH_LIMIT = 20
+SEARCH_SCOPES = {"all": "Everything", "posts": "Posts", "documents": "Documents", "chat": "Chat"}
+
+
+def _like(term):
+    """LIKE pattern for a plain-text search (the member's % and _ are matched literally)."""
+    esc = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{esc}%"
+
+
+@bp.route("/search")
+@login_required
+@limiter.limit("60 per minute")
+def search():
+    q = " ".join(request.args.get("q", "").split())[:100]
+    scope = request.args.get("in", "all")
+    scope = scope if scope in SEARCH_SCOPES else "all"
+    res = {"posts": [], "documents": [], "chat": []}
+    too_short = bool(q) and len(q) < 2
+    if len(q) >= 2:
+        like = _like(q)
+        if scope in ("all", "posts"):
+            res["posts"] = (Post.query.filter(post_is_live(), db.or_(Post.title.ilike(like, escape="\\"), Post.body.ilike(like, escape="\\")))
+                            .order_by(Post.created_at.desc()).limit(SEARCH_LIMIT).all())
+        if scope in ("all", "documents"):
+            docs = []
+            for p in (Post.query.filter(post_is_live(), Post.file_key.isnot(None), Post.file_name.ilike(like, escape="\\"))
+                      .order_by(Post.created_at.desc()).limit(SEARCH_LIMIT)):
+                docs.append(("post", p))
+            for m in (Message.query.filter(Message.deleted.is_(False), Message.file_key.isnot(None), Message.file_name.ilike(like, escape="\\"))
+                      .order_by(Message.created_at.desc()).limit(SEARCH_LIMIT)):
+                docs.append(("chat", m))
+            docs.sort(key=lambda r: r[1].created_at, reverse=True)
+            for src, obj in docs[:SEARCH_LIMIT]:
+                mime = obj.file_mime or ""
+                media = mime.startswith("image/") or mime.startswith("video/")
+                res["documents"].append({
+                    "name": obj.file_name or obj.file_key, "url": file_url(obj.file_key, obj.file_name, media),
+                    "where": ("Admin post · " + obj.section_label.split(" ", 1)[-1]) if src == "post"
+                             else Message.CHANNELS.get(obj.channel, "General") + " chat",
+                    "created_at": obj.created_at})
+        if scope in ("all", "chat"):
+            res["chat"] = (Message.query.filter(Message.deleted.is_(False), Message.body.ilike(like, escape="\\"))
+                           .order_by(Message.created_at.desc()).limit(SEARCH_LIMIT).all())
+    total = sum(len(v) for v in res.values())
+    return render_template("search.html", q=q, scope=scope, scopes=SEARCH_SCOPES, res=res, total=total, too_short=too_short,
+                           channels=Message.CHANNELS, section_endpoints=SECTION_ENDPOINTS, limit=SEARCH_LIMIT)
+
+
+# ---------------------------------------------------------------- market updates (buttons in the community chat)
+@bp.route("/market-update/<kind>")
+@login_required
+@limiter.limit("60 per minute")
+def market_update(kind):
+    """The latest saved pre-market / post-market briefing. Read-only: this never calls the AI."""
+    from . import market_update as mu
+    from .scheduler import to_local
+    if kind not in mu.KINDS:
+        abort(404)
+    row = mu.latest(kind)
+    if row is None:
+        return jsonify(ok=False, label=mu.KINDS[kind],
+                       error="The first update has not been published yet. Please check back soon."), 404
+    return jsonify(ok=True, label=mu.KINDS[kind], body=row.body, sources=row.sources or [],
+                   for_date=row.for_date.isoformat(), is_today=row.for_date == mu.today_local(),
+                   updated=to_local(row.created_at).isoformat())

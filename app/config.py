@@ -73,6 +73,8 @@ class Config:
     MAX_PASSWORD_LENGTH = int(os.environ.get("MAX_PASSWORD_LENGTH", 128))
 
     # Password reset / email. In AWS, use the ECS task IAM role with SES.
+    SCHEDULE_TZ = os.environ.get("SCHEDULE_TZ", "Asia/Kolkata")  # time zone of the admin "publish later" picker
+    SCHEDULER_ENABLED = os.environ.get("SCHEDULER_ENABLED", "1") == "1"
     EMAIL_VERIFY_TTL = int(os.environ.get("EMAIL_VERIFY_TTL", 86400))  # sign-up confirmation link lifetime (seconds)
     PASSWORD_RESET_TTL = int(os.environ.get("PASSWORD_RESET_TTL", 3600))
     PASSWORD_RESET_EMAIL_FROM = os.environ.get("PASSWORD_RESET_EMAIL_FROM", "")

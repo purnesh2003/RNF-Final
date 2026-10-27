@@ -14,7 +14,7 @@ from sqlalchemy import func
 
 from . import metrics
 from .extensions import db
-from .models import Message, Quiz, QuizAttempt, User
+from .models import Message, Quiz, QuizAttempt, User, quiz_is_live
 
 RANGES = (7, 30, 90)
 DEFAULT_RANGE = 30
@@ -162,7 +162,7 @@ def build(days=DEFAULT_RANGE, now=None):
 
     # ---- quizzes: attempts and average score for the latest ten
     quiz_rows = []
-    for q in Quiz.query.order_by(Quiz.created_at.desc()).limit(10).all():
+    for q in Quiz.query.filter(quiz_is_live()).order_by(Quiz.created_at.desc()).limit(10).all():
         n, avg = (db.session.query(func.count(QuizAttempt.id),
                                    func.avg(QuizAttempt.score * 100.0 / func.nullif(QuizAttempt.total, 0)))
                   .filter(QuizAttempt.quiz_id == q.id, QuizAttempt.user_id.in_(member_ids)).one())
