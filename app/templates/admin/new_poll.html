@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Create poll · Admin{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1><svg class="i"><use href="#i-poll"/></svg>Create a poll</h1><p>Members can vote once. Results show live.</p></div></div>
-<form method="post" class="card form-narrow"><div class="card-body p-4">
+<h2 class="mb-3">🗳️ Create a poll</h2>
+<form method="post" class="card shadow-sm border-0 rounded-4"><div class="card-body">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="mb-3"><label class="form-label">Question</label><input name="question" class="form-control" maxlength="300" required></div>
   <div class="mb-3"><label class="form-label">Options (one per line, 2 to 20)</label><textarea name="options" rows="5" class="form-control" required></textarea></div>
