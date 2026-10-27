@@ -333,58 +333,6 @@ def invite():
     share = quote(f"Join me on {site}: free market insights and a friendly community. Sign up here: {link}")
     return render_template("invite.html", link=link, code=code, joined=joined, waiting=waiting, share=share)
 
-
-# ---------------------------------------------------------------- search (posts, documents, chat)
-SEARCH_LIMIT = 20
-SEARCH_SCOPES = {"all": "Everything", "posts": "Posts", "documents": "Documents", "chat": "Chat"}
-
-
-def _like(term):
-    """LIKE pattern for a plain-text search (the member's % and _ are matched literally)."""
-    esc = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    return f"%{esc}%"
-
-
-@bp.route("/search")
-@login_required
-@limiter.limit("60 per minute")
-def search():
-    q = " ".join(request.args.get("q", "").split())[:100]
-    scope = request.args.get("in", "all")
-    scope = scope if scope in SEARCH_SCOPES else "all"
-    res = {"posts": [], "documents": [], "chat": []}
-    too_short = bool(q) and len(q) < 2
-    if len(q) >= 2:
-        like = _like(q)
-        if scope in ("all", "posts"):
-            res["posts"] = (Post.query.filter(post_is_live(), db.or_(Post.title.ilike(like, escape="\\"), Post.body.ilike(like, escape="\\")))
-                            .order_by(Post.created_at.desc()).limit(SEARCH_LIMIT).all())
-        if scope in ("all", "documents"):
-            docs = []
-            for p in (Post.query.filter(post_is_live(), Post.file_key.isnot(None), Post.file_name.ilike(like, escape="\\"))
-                      .order_by(Post.created_at.desc()).limit(SEARCH_LIMIT)):
-                docs.append(("post", p))
-            for m in (Message.query.filter(Message.deleted.is_(False), Message.file_key.isnot(None), Message.file_name.ilike(like, escape="\\"))
-                      .order_by(Message.created_at.desc()).limit(SEARCH_LIMIT)):
-                docs.append(("chat", m))
-            docs.sort(key=lambda r: r[1].created_at, reverse=True)
-            for src, obj in docs[:SEARCH_LIMIT]:
-                mime = obj.file_mime or ""
-                media = mime.startswith("image/") or mime.startswith("video/")
-                res["documents"].append({
-                    "name": obj.file_name or obj.file_key, "url": file_url(obj.file_key, obj.file_name, media),
-                    "where": ("Admin post · " + obj.section_label.split(" ", 1)[-1]) if src == "post"
-                             else Message.CHANNELS.get(obj.channel, "General") + " chat",
-                    "created_at": obj.created_at})
-        if scope in ("all", "chat"):
-            res["chat"] = (Message.query.filter(Message.deleted.is_(False), Message.body.ilike(like, escape="\\"))
-                           .order_by(Message.created_at.desc()).limit(SEARCH_LIMIT).all())
-    total = sum(len(v) for v in res.values())
-    return render_template("search.html", q=q, scope=scope, scopes=SEARCH_SCOPES, res=res, total=total, too_short=too_short,
-                           channels=Message.CHANNELS, section_endpoints=SECTION_ENDPOINTS, limit=SEARCH_LIMIT)
-
-
-# ---------------------------------------------------------------- market updates (buttons in the community chat)
 @bp.route("/market-update/<kind>")
 @login_required
 @limiter.limit("60 per minute")
