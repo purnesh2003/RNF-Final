@@ -65,12 +65,34 @@ if (!(channel in CHANNELS)) channel = 'general';
 
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
 
+// ---- WhatsApp-style day dividers: Today / Yesterday / weekday / date ----
+function dayKey(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function dayLabel(d) {
+  const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diff = Math.round((today - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff > 1 && diff < 7) return d.toLocaleDateString([], {weekday: 'long'});
+  return d.toLocaleDateString([], {day: 'numeric', month: 'short', year: 'numeric'});
+}
+function addDaySeparators() {                           // rebuilt from the messages on screen, so deletes and "older" stay correct
+  box.querySelectorAll('.day-sep').forEach(n => n.remove());
+  let last = null;
+  box.querySelectorAll('.msg').forEach(n => {
+    const d = new Date(n.dataset.ts), k = dayKey(d);
+    if (k !== last) { last = k; box.insertBefore(el('div', 'day-sep', dayLabel(d)), n); }
+  });
+}
+setInterval(addDaySeparators, 60000);                   // "Today" becomes "Yesterday" after midnight
+
 function render(m) {
   const row = el('div', 'msg' + (m.user_id === ME ? ' mine' : ''));
   row.dataset.id = m.id;
+  row.dataset.ts = m.created_at;
   const head = el('div', 'msg-head');
   head.append(el('strong', '', m.user), m.is_admin ? el('span', 'badge bg-warning text-dark ms-1', 'Admin') : '',
-              el('small', 'text-muted ms-2', new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})));
+              (() => { const t = el('small', 'text-muted ms-2', new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}));
+                       t.title = new Date(m.created_at).toLocaleString([], {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}); return t; })());
   if (IS_ADMIN) {
     const del = el('button', 'btn btn-link btn-sm text-danger p-0 ms-2', 'delete');
     del.onclick = () => fetch(`/admin/messages/${m.id}/delete`, {method: 'POST', headers: {'X-CSRFToken': csrf}});
@@ -104,6 +126,7 @@ function addLive(m) {
   const stick = nearBottom() || m.user_id === ME;
   box.append(render(m));
   newest = Math.max(newest, m.id);
+  addDaySeparators();
   if (stick) box.scrollTop = box.scrollHeight;
 }
 
@@ -118,7 +141,7 @@ function showChannel(ch) {
     b.classList.toggle('active', on); b.setAttribute('aria-selected', on);
     if (on) b.querySelector('.unread').classList.add('d-none');
   });
-  box.querySelectorAll('.msg').forEach(n => n.remove());
+  box.querySelectorAll('.msg, .day-sep').forEach(n => n.remove());
   oldest = null; newest = 0; older.classList.add('d-none');
   text.placeholder = MUTED ? text.placeholder : `Message #${CHANNELS[ch]}…`;
   loadHistory();
@@ -132,6 +155,7 @@ async function loadHistory(before) {
   const prevH = box.scrollHeight;
   const anchor = older.parentElement.nextSibling;
   list.forEach(m => { if (!box.querySelector(`[data-id="${m.id}"]`)) box.insertBefore(render(m), anchor); });
+  addDaySeparators();
   oldest = list[0].id;
   if (!before) newest = Math.max(newest, list[list.length - 1].id);
   older.classList.toggle('d-none', list.length < 50);
@@ -230,7 +254,7 @@ if (typeof io === 'undefined') {
   socket.on('connect_error', e => { statusEl.textContent = 'connection error'; statusEl.className = 'badge bg-danger'; console.error('socket error', e); });
   socket.on('message', addLive);
   socket.on('chat_mode', d => applyMode(d.mode));
-  socket.on('message_deleted', d => { const n = box.querySelector(`[data-id="${d.id}"]`); if (n) n.remove(); });
+  socket.on('message_deleted', d => { const n = box.querySelector(`[data-id="${d.id}"]`); if (n) { n.remove(); addDaySeparators(); } });
 }
 </script>
 {% endblock %}

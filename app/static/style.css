@@ -224,6 +224,8 @@ img, video { max-width: 100%; height: auto; }
 @supports (height: 100dvh) { .chat-messages { height: clamp(260px, calc(100dvh - 430px), 760px); } }
 .msg { max-width: 78%; background: var(--surface); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: .55rem .85rem; margin-bottom: .6rem; }
 .msg.mine { margin-left: auto; background: var(--green-tint); border-color: #c4e0d9; border-radius: 14px 14px 4px 14px; }
+.day-sep { display: table; margin: .9rem auto .7rem; padding: .2rem .8rem; font-size: .75rem; font-weight: 600; color: #54606e;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 999px; }
 .msg-head { font-size: .8rem; }
 .msg-body { white-space: pre-wrap; word-break: break-word; }
 .msg-body, .msg-file, .msg-head { overflow-wrap: anywhere; }
