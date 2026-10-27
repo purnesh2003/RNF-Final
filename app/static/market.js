@@ -42,7 +42,7 @@
         if (!d.is_today) panel.appendChild(el('div', 'alert alert-warning py-1 px-2 mu-stale', "This is the latest available update (not today's yet)."));
         panel.appendChild(renderBody(d.body));
         var foot = el('div', 'mu-foot');
-        foot.appendChild(el('div', '', 'Posted by the admin. Informational only, not investment advice.'));
+        foot.appendChild(el('div', '', 'Posted by the admin for educational purpose only. Not a SEBI registered advisor; this is not a tip or a buy/sell recommendation.'));
         if (d.sources && d.sources.length) {
           var s = el('div', 'mt-1', 'Sources: ');
           d.sources.forEach(function (x, i) {

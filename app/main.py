@@ -71,6 +71,12 @@ def home():
                            latest_quiz=latest_quiz, quiz_attempt=quiz_attempt)
 
 
+@bp.route("/disclaimer")
+def disclaimer():
+    """Public disclaimer page (linked from the footer, the top bar and the sign-up form)."""
+    return render_template("disclaimer.html")
+
+
 @bp.route("/sip-calculator")
 def sip_calculator():
     """Public SIP calculator (no login needed). All maths runs in the browser; nothing is stored."""

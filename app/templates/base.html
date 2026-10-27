@@ -46,7 +46,7 @@
 <div class="topbar">
   <div class="container">
     <span>Free market insights. No courses sold.</span>
-    <span class="d-none d-md-inline">Informational only, not investment advice.</span>
+    <span class="d-none d-md-inline">Not a SEBI registered advisor. For educational purpose only. <a href="{{ url_for('main.disclaimer') }}">Disclaimer</a></span>
   </div>
 </div>
 
@@ -146,6 +146,7 @@
         <div class="footer-title">Explore</div>
         <ul class="footer-links">
           <li><a href="{{ url_for('main.home') }}">Home</a></li>
+          <li><a href="{{ url_for('main.disclaimer') }}">Disclaimer</a></li>
           {% if current_user.is_authenticated %}
           <li><a href="{{ url_for('main.news') }}">News</a></li>
           <li><a href="{{ url_for('main.mutual_funds') }}">Mutual Funds</a></li>
@@ -169,7 +170,7 @@
     </div>
     <div class="footer-legal">
       <span>&copy; {{ now_year }} {{ site_name }}</span>
-      <span>Informational only, not investment advice. Investments in securities are subject to market risks; read all related documents carefully.</span>
+      <span>We are not a SEBI registered advisor. We do not give tips or any buying recommendations. Everything shared is for educational purpose only. Investments in securities are subject to market risks; read all related documents carefully. <a href="{{ url_for('main.disclaimer') }}">Read the full disclaimer</a>.</span>
     </div>
   </div>
 </footer>

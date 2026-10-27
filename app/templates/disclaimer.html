@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Disclaimer · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1><svg class="i"><use href="#i-shield"/></svg>Disclaimer</h1><p>Please read this before using {{ site_name }}.</p></div></div>
+<div class="card form-narrow"><div class="card-body p-4">
+  <p class="fw-semibold">We are not a SEBI registered advisor. We do not give tips or any buying recommendations. Everything shared on this website is for educational purpose only.</p>
+  <ul>
+    <li>Posts, news, market updates, quizzes, polls, the SIP calculator and community chat messages are shared to help people learn about markets and money.</li>
+    <li>Nothing here is investment advice, a research report, a tip, or an offer or recommendation to buy, sell or hold any security, mutual fund or other product.</li>
+    <li>Views shared by members in the community chat are their own. {{ site_name }} does not verify them and is not responsible for them.</li>
+    <li>Market updates and any numbers, levels or examples shown are for information and may be incomplete or out of date. The SIP calculator is an illustration and does not guarantee returns.</li>
+    <li>Investments in securities are subject to market risks; read all related documents carefully. Past performance does not guarantee future results.</li>
+    <li>Please do your own research and speak to a SEBI registered investment advisor before you make any investment decision. You are solely responsible for your decisions and any gains or losses.</li>
+  </ul>
+  <p class="text-muted small mb-0">By using this website you confirm that you have read and understood this disclaimer.</p>
+</div></div>
+{% endblock %}

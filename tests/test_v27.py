@@ -141,3 +141,12 @@ def test_search_treats_percent_literally_and_needs_login(app, client):
     assert client.get("/search?q=nifty").status_code == 302
     signup(client)
     assert b"No results" in client.get("/search?q=%25%25").data  # "%%" must not match everything
+
+
+# ------------------------------------------------------------ disclaimer
+def test_disclaimer_page_and_footer_are_public(app, client):
+    r = client.get("/disclaimer")
+    assert r.status_code == 200 and b"not a SEBI registered advisor" in r.data
+    home = client.get("/").get_data(as_text=True)
+    assert "SEBI registered advisor" in home and "/disclaimer" in home
+    assert "SEBI registered advisor" in client.get("/register").get_data(as_text=True)

@@ -375,3 +375,4 @@ img, video { max-width: 100%; height: auto; }
 .mu-panel .mu-foot{font-size:.75rem;color:#6b7280;margin-top:10px;border-top:1px solid rgba(0,0,0,.08);padding-top:8px}
 .mu-panel .mu-stale{font-size:.8rem}
 .mu-pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;margin:6px 0 0}
+.footer-legal a { color: inherit; text-decoration: underline; }

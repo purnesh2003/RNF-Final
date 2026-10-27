@@ -26,6 +26,7 @@
         <input id="confirm" type="password" name="confirm" class="form-control" minlength="12" autocomplete="new-password" required></div>
       <button class="btn btn-brand w-100 btn-lg">Create account</button>
     </form>
+    <p class="form-text mt-3 mb-0">Everything on this site is for educational purpose only. We are not a SEBI registered advisor and we do not give tips or buying recommendations. <a href="{{ url_for('main.disclaimer') }}" target="_blank" rel="noopener">Read the disclaimer</a>.</p>
     <div class="auth-foot"><span>Already a member? <a href="{{ url_for('auth.login') }}">Log in</a></span></div>
   </div>
 </div>
