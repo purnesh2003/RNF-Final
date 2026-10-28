@@ -2,13 +2,8 @@
 {% block content %}
 <section class="hero">
   <div class="hero-copy">
-<<<<<<< HEAD
     <h1>RNF COMMUNITY</h1>
     <p class="hero-lead">Join Community For More Updates</p>
-=======
-    <h1>Market guidance without the sales pitch.</h1>
-    <p class="hero-lead">{{ site_name }} shares news, mutual fund and stock updates for learning. Join the community to follow updates, ask questions and learn alongside other investors.</p>
->>>>>>> 922820f (Add SWP calculator)
     <div class="hero-actions">
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('community.chat') }}" class="btn btn-brand btn-lg">Open community</a>
