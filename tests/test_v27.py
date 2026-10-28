@@ -150,3 +150,25 @@ def test_disclaimer_page_and_footer_are_public(app, client):
     home = client.get("/").get_data(as_text=True)
     assert "SEBI registered advisor" in home and "/disclaimer" in home
     assert "SEBI registered advisor" in client.get("/register").get_data(as_text=True)
+
+
+# ------------------------------------------------------------ calculator tab, wording
+def test_calculator_tab_is_visible_to_everyone_and_free_insights_wording_is_gone(app, client):
+    home = client.get("/").get_data(as_text=True)  # logged out
+    assert 'class="nav-link nav-calc"' in home and "/sip-calculator" in home and "btn-calc" in home
+    assert "free market insights" not in home.lower() and "market insights are free" not in home.lower()
+    signup(client)
+    assert 'nav-calc' in client.get("/news").get_data(as_text=True)
+    assert "nav-calc active" in client.get("/sip-calculator").get_data(as_text=True)
+
+
+def test_swp_calculator_is_public_and_linked_from_both_calculator_pages(app, client):
+    r = client.get("/swp-calculator")  # logged out
+    page = r.get_data(as_text=True)
+    assert r.status_code == 200 and "SWP Calculator" in page and "swp.js" in page
+    for label in ("Total investment", "Withdrawal per month", "Expected return rate", "Time period", "Final value"):
+        assert label in page
+    assert "calc-tab active" in page and "/sip-calculator" in page  # tab switcher, SWP tab active
+    sip = client.get("/sip-calculator").get_data(as_text=True)
+    assert "/swp-calculator" in sip and "calc-tabs" in sip
+    assert "nav-calc active" in page and "Calculators" in page

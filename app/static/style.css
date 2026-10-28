@@ -376,3 +376,23 @@ img, video { max-width: 100%; height: auto; }
 .mu-panel .mu-stale{font-size:.8rem}
 .mu-pre{white-space:pre-wrap;font-family:inherit;font-size:.85rem;margin:6px 0 0}
 .footer-legal a { color: inherit; text-decoration: underline; }
+
+/* SIP Calculator: a big, always-visible tab in the menu and a button on the home page */
+.site-header .nav-link.nav-calc { background: var(--green); color: #fff; font-weight: 700; border-radius: 999px; padding: .5rem 1.05rem; margin: 0 .25rem; display: inline-flex; align-items: center; gap: .4rem; }
+.site-header .nav-link.nav-calc:hover, .site-header .nav-link.nav-calc.active { background: var(--green-2); color: #fff; }
+.site-header .nav-link.nav-calc::after { display: none; }
+.btn-calc { background: var(--brass); color: #fff; border: 0; font-weight: 700; }
+.btn-calc:hover { filter: brightness(.92); color: #fff; }
+.btn-calc .i, .nav-calc .i { width: 1.15em; height: 1.15em; margin-right: .35rem; }
+
+/* Calculator tabs (SIP | SWP) and the SWP page */
+.calc-tabs { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.calc-tab { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1.1rem; border-radius: 999px; font-weight: 700; text-decoration: none;
+            color: var(--green); background: var(--surface); border: 2px solid var(--green); }
+.calc-tab:hover { background: var(--green-tint); color: var(--green-2); }
+.calc-tab.active { background: var(--green); color: #fff; }
+.calc-tab .i { width: 1.1em; height: 1.1em; }
+.swp-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
+.swp-chart { width: 100%; height: 190px; display: block; background: #f7f9fb; border-radius: var(--r-sm); }
+.swp-table { max-height: 420px; overflow: auto; }
+.swp-table thead th { position: sticky; top: 0; background: var(--surface); }

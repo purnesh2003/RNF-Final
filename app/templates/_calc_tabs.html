@@ -1,0 +1,5 @@
+{# Switch between the two calculators (shown at the top of both pages). #}
+<div class="calc-tabs" role="tablist" aria-label="Calculators">
+  <a class="calc-tab{{ ' active' if request.endpoint == 'main.sip_calculator' }}" href="{{ url_for('main.sip_calculator') }}" role="tab" aria-selected="{{ 'true' if request.endpoint == 'main.sip_calculator' else 'false' }}"><svg class="i"><use href="#i-calc"/></svg>SIP Calculator</a>
+  <a class="calc-tab{{ ' active' if request.endpoint == 'main.swp_calculator' }}" href="{{ url_for('main.swp_calculator') }}" role="tab" aria-selected="{{ 'true' if request.endpoint == 'main.swp_calculator' else 'false' }}"><svg class="i"><use href="#i-calc"/></svg>SWP Calculator</a>
+</div>

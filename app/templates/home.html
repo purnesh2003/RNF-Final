@@ -2,8 +2,13 @@
 {% block content %}
 <section class="hero">
   <div class="hero-copy">
+<<<<<<< HEAD
     <h1>RNF COMMUNITY</h1>
     <p class="hero-lead">Join Community For More Updates</p>
+=======
+    <h1>Market guidance without the sales pitch.</h1>
+    <p class="hero-lead">{{ site_name }} shares news, mutual fund and stock updates for learning. Join the community to follow updates, ask questions and learn alongside other investors.</p>
+>>>>>>> 922820f (Add SWP calculator)
     <div class="hero-actions">
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('community.chat') }}" class="btn btn-brand btn-lg">Open community</a>
@@ -12,6 +17,7 @@
         <a href="{{ url_for('auth.register') }}" class="btn btn-brand btn-lg">Create free account</a>
         <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-lg">Log in</a>
       {% endif %}
+      <a href="{{ url_for('main.sip_calculator') }}" class="btn btn-calc btn-lg"><svg class="i"><use href="#i-calc"/></svg>SIP &amp; SWP Calculators</a>
     </div>
   </div>
   <figure class="hero-portrait">
@@ -107,7 +113,7 @@
         <h3 class="panel-title">Our promise</h3>
         <ul class="promise">
           <li><svg class="i"><use href="#i-shield"/></svg>We don't sell courses.</li>
-          <li><svg class="i"><use href="#i-shield"/></svg>Market insights are free for every member.</li>
+          <li><svg class="i"><use href="#i-shield"/></svg>Everything shared is for educational purpose only.</li>
           <li><svg class="i"><use href="#i-shield"/></svg>No hype and no hidden catch.</li>
         </ul>
       </div>
