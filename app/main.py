@@ -127,7 +127,7 @@ def serve_file(key):
 # ---------------------------------------------------------------- News / Mutual Funds / Stocks
 SECTION_PAGES = {
     "news": ("News", "📰", "Latest market news and headlines, posted by Rakshith."),
-    "mutual_funds": ("Mutual Funds", "📊", "Mutual fund picks, NAV updates and guidance, posted by Rakshith."),
+    "mutual_funds": ("Mutual Funds", "📊", "Mutual fund updates posted by Rakshith."),
     "stocks": ("Stocks", "📈", "Stock ideas, market moves and analysis, posted by Rakshith."),
 }
 
