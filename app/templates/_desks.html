@@ -1,0 +1,83 @@
+{# News / Mutual Funds / Quiz cards for the home page. Included from home.html. #}
+<link rel="stylesheet" href="{{ url_for('static', filename='desks.css') }}">
+{% import "_art.html" as art %}
+{% set authed = current_user.is_authenticated %}
+{% macro bolt() %}<svg class="dk-bolt" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="currentColor"/></svg>{% endmacro %}
+{% macro arrow() %}<svg class="dk-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endmacro %}
+
+<section class="desks" id="sections" aria-label="Research desks">
+
+  {# ---------------- NEWS ---------------- #}
+  {% set n = latest.get('news') if authed else none %}
+  <article class="dk dk-news">
+    {{ art.news() }}
+    <span class="dk-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h8M8 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+    <h3 class="dk-title">News</h3>
+    <p class="dk-sub">Headlines and developments that move the market.</p>
+    <ul class="dk-chips">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V5M19 20v-7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>Markets</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 4l9 6M5 10v8M10 10v8M14 10v8M19 10v8M3 20h18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>RBI / SEBI</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 12h17M12 3.5c3 3 3 14 0 17M12 3.5c-3 3-3 14 0 17" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>Global</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 12h5M10 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Economy</li>
+    </ul>
+    <div class="dk-strip">
+      {{ bolt() }}
+      <div class="dk-strip-text">
+        {% if n %}<small>Latest, {{ n.created_at|timeago }}</small><strong>{{ n.title }}</strong>
+        {% elif not authed %}<small>Members only</small><strong>Log in to read the latest posts.</strong>
+        {% else %}<small>No posts yet</small><strong>New posts will appear here.</strong>{% endif %}
+      </div>
+      <a class="dk-btn" href="{{ url_for('main.news') }}">Open News {{ arrow() }}</a>
+    </div>
+  </article>
+
+  {# ---------------- MUTUAL FUNDS ---------------- #}
+  {% set f = latest.get('mutual_funds') if authed else none %}
+  <article class="dk dk-funds">
+    {{ art.funds() }}
+    <span class="dk-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M15 3.4A9 9 0 0 1 20.6 9H15z" fill="currentColor"/></svg></span>
+    <h3 class="dk-title">Mutual Funds</h3>
+    <p class="dk-sub">Fund picks, NAV updates and guidance for long-term investors.</p>
+    <div class="dk-tiles">
+      <a href="{{ url_for('main.mutual_funds') }}"><span class="t-ic t-green"><svg viewBox="0 0 24 24"><path d="M6 20v-8M12 20V6M18 20v-5" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg></span><b>Top Funds</b><small>Our picks</small></a>
+      <a href="{{ url_for('main.mutual_funds') }}"><span class="t-ic t-purple"><svg viewBox="0 0 24 24"><path d="M5 19V12M10 19V8M15 19v-6M20 19V5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span><b>NAV Updates</b><small>Latest NAVs</small></a>
+      <a href="{{ url_for('main.mutual_funds') }}"><span class="t-ic t-amber"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.4 1-1.9A6 6 0 0 0 12 3z" fill="currentColor"/></svg></span><b>Learn</b><small>Simple guides</small></a>
+      <a href="{{ url_for('main.calculator') }}"><span class="t-ic t-blue"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z" fill="currentColor"/><path d="M9 13h6M9 17h6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></span><b>Tools</b><small>Calculators</small></a>
+    </div>
+    <div class="dk-strip">
+      {{ bolt() }}
+      <div class="dk-strip-text">
+        {% if f %}<small>Latest, {{ f.created_at|timeago }}</small><strong>{{ f.title }}</strong>
+        {% elif not authed %}<small>Members only</small><strong>Log in to read the latest posts.</strong>
+        {% else %}<small>No posts yet</small><strong>New posts will appear here.</strong>{% endif %}
+      </div>
+      <a class="dk-btn" href="{{ url_for('main.mutual_funds') }}">Open Mutual Funds {{ arrow() }}</a>
+    </div>
+  </article>
+
+  {# ---------------- QUIZ ---------------- #}
+  {% set can_take = latest_quiz and not quiz_attempt %}
+  <article class="dk dk-quiz">
+    {{ art.quiz() }}
+    <span class="dk-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.7.4-1.1.9-1.1 1.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/></svg></span>
+    <h3 class="dk-title">Quiz</h3>
+    <p class="dk-sub">Test your market knowledge with the newest quiz.</p>
+    <div class="dk-strip dk-strip-quiz">
+      <div class="dk-score">
+        <svg class="dk-trophy" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v5a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8" fill="#f5a524" stroke="#d98a0b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>
+          {% if not authed %}<small>Members only</small><strong class="dk-small-strong">Log in to play</strong>
+          {% elif quiz_attempt %}<small>Your score</small><strong>{{ quiz_attempt.score }}/{{ quiz_attempt.total }}</strong>
+          {% elif latest_quiz %}<small>New, {{ latest_quiz.created_at|timeago }}</small><strong class="dk-small-strong">{{ latest_quiz.title }}</strong>
+          {% else %}<small>No quiz yet</small><strong class="dk-small-strong">Coming soon</strong>{% endif %}
+        </div>
+      </div>
+      <div class="dk-more">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 20v-8M12 20V5M18 20v-6" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+        <div><b>{% if quiz_attempt %}Take more quizzes{% else %}Newest quiz{% endif %}</b><small>Improve your score</small></div>
+      </div>
+      <a class="dk-btn" href="{{ url_for('main.take_quiz', quiz_id=latest_quiz.id) if can_take else url_for('main.quizzes') }}">{% if can_take %}Start Quiz{% else %}Open Quizzes{% endif %} {{ arrow() }}</a>
+    </div>
+  </article>
+
+</section>

@@ -307,13 +307,13 @@ def test_notification_can_be_switched_off(ai_app, mailbox):
 def test_home_shows_quiz_card_not_stocks_card(ai_app, client):
     signup(client)
     html = client.get("/").get_data(as_text=True)
-    assert "desk-title\">Quiz<" in html and "desk-title\">Stocks<" not in html
+    assert "dk-title\">Quiz<" in html and "dk-title\">Stocks<" not in html
     assert "No quiz yet" in html
     publish_ai(admin_client(ai_app))
     html = client.get("/").get_data(as_text=True)
-    assert "AI quiz" in html and "Take the quiz" in html
+    assert "AI quiz" in html and "Start Quiz" in html
     client.post("/quizzes/1", data={"q1": "1", "q2": "1", "q3": "1"})
-    assert "Your score: 3/3" in client.get("/").get_data(as_text=True)
+    assert "<strong>3/3</strong>" in client.get("/").get_data(as_text=True)
 
 
 def test_stocks_section_still_exists(client):
@@ -374,8 +374,8 @@ def test_post_emails_can_be_switched_off(ai_app, client, post_mail):
     assert post_mail == []
 
 
-def test_sip_calculator_is_public_and_home_has_button(ai_app, client):
-    r = client.get("/sip-calculator")
-    assert r.status_code == 200 and b"SIP Calculator" in r.data
+def test_calculator_is_public_and_menu_has_the_tab(ai_app, client):
+    r = client.get("/calculator")
+    assert r.status_code == 200 and b"SIP Calculator" in r.data and b"SWP Calculator" in r.data
     home = client.get("/").data
-    assert b'href="/sip-calculator"' in home and b"whatsapp" not in home.lower()
+    assert b'href="/calculator"' in home and b"whatsapp" not in home.lower()

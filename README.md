@@ -8,7 +8,7 @@ A full-stack community platform built with **Python/Flask**, PostgreSQL, Redis, 
 - Sign-up needs a Gmail address and is activated only after the member clicks the confirmation link e-mailed to them (fake addresses never get an account)
 - Password rule: at least 12 characters with a letter, a number and a special character
 - Working "Forgot password" e-mail (Gmail SMTP App Password, any SMTP server, or Amazon SES)
-- Community split into 4 rooms (NASM, Investors, Traders, General); MP4 videos play inline (max 50 MB), photos/PDFs/Office files max 15 MB
+- Community split into 4 rooms (NISM, Investors, Traders, General); MP4 videos play inline (max 50 MB), photos/PDFs/Office files max 15 MB
 - 📁 Documents library: every photo, video, PDF and file uploaded by the admin or members in one filterable place
 - Strong password hashing; plaintext passwords are never stored
 - Session protection and CSRF protection
@@ -210,10 +210,9 @@ Required GitHub environment values:
 
 The current application includes the community platform features. Finance/news/market-data pages are not part of the core platform and should be added as separate modules if required.
 
-## Invite friends, publish later, search
+## Invite friends, publish later
 - **Invite friends** (user menu > Invite friends): each member gets a personal link; the page counts friends who signed up with it and confirmed their email.
 - **Publish later**: the admin "Create a post" and "Create quiz" forms have an optional date/time (`SCHEDULE_TZ`, default Asia/Kolkata). The item is hidden from members until then; members are e-mailed at that time. Manage it under Admin menu > Scheduled posts & quizzes (publish now / cancel). A small background thread started in `wsgi.py` does the publishing (turn off with `SCHEDULER_ENABLED=0`).
-- **Search** (nav > Search): searches posts, document file names and chat history.
 - Needs `flask db upgrade` (migration 0010).
 
 ## Market updates (pre-market / post-market)

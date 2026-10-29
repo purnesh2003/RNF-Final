@@ -63,7 +63,7 @@
   }
 
   function render() {
-    var inv = num($("inv")), w = num($("wd")), y = num($("years")), r = num($("rate")), err = $("swp-error"), bad = null;
+    var inv = num($("inv")), w = num($("wd")), y = num($("w-years")), r = num($("w-rate")), err = $("swp-error"), bad = null;
     if (!(inv >= LIMIT.invMin && inv <= LIMIT.invMax)) bad = "Total investment must be between " + fmt(LIMIT.invMin) + " and " + fmt(LIMIT.invMax) + ".";
     else if (!(w >= LIMIT.wMin && w <= inv)) bad = "Withdrawal per month must be between " + fmt(LIMIT.wMin) + " and your total investment.";
     else if (!(y >= LIMIT.yMin && y <= LIMIT.yMax) || Math.floor(y) !== y) bad = "Time period must be a whole number of years from 1 to 40.";
@@ -89,11 +89,11 @@
     range.addEventListener("input", function () { n.value = range.value; render(); });
     n.addEventListener("input", function () { var v = num(n); if (isFinite(v)) range.value = v; render(); });
   }
-  link($("inv"), $("inv-r")); link($("wd"), $("wd-r")); link($("years"), $("years-r")); link($("rate"), $("rate-r"));
+  link($("inv"), $("inv-r")); link($("wd"), $("wd-r")); link($("w-years"), $("w-years-r")); link($("w-rate"), $("w-rate-r"));
   $("inv").value = $("inv-r").value = 500000;
   $("wd").value = $("wd-r").value = 5000;
-  $("years").value = $("years-r").value = 5;
-  $("rate").value = $("rate-r").value = 10;
+  $("w-years").value = $("w-years-r").value = 5;
+  $("w-rate").value = $("w-rate-r").value = 10;
   $("view-year").addEventListener("click", function () { view = "year"; drawTable(); });
   $("view-month").addEventListener("click", function () { view = "month"; drawTable(); });
   $("swp-form").addEventListener("submit", function (e) { e.preventDefault(); });

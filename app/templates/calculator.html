@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Calculator · {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Calculator</h1><p>Plan with a SIP or a SWP. Free for everyone, no login needed.</p></div></div>
+<ul class="nav nav-pills channel-tabs mb-3" id="calc-tabs" role="tablist">
+  <li class="nav-item" role="presentation"><button type="button" class="nav-link active" role="tab" data-calc="sip" aria-selected="true">SIP Calculator</button></li>
+  <li class="nav-item" role="presentation"><button type="button" class="nav-link" role="tab" data-calc="swp" aria-selected="false">SWP Calculator</button></li>
+</ul>
+<section id="panel-sip" role="tabpanel">{% include "_sip_panel.html" %}</section>
+<section id="panel-swp" role="tabpanel" hidden>{% include "_swp_panel.html" %}</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='calculator.js') }}"></script>
+<script src="{{ url_for('static', filename='sip.js') }}"></script>
+<script src="{{ url_for('static', filename='swp.js') }}"></script>
+{% endblock %}

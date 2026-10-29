@@ -1,0 +1,53 @@
+{# Background illustrations shared by the home cards and the page banners. #}
+{% macro news(cls="dk-art") %}<svg class="{{ cls }}" viewBox="0 0 260 190" aria-hidden="true">
+      <circle cx="170" cy="70" r="62" fill="#fbd08a" opacity=".55"/>
+      <g transform="rotate(-8 90 100)">
+        <rect x="22" y="38" width="130" height="118" rx="6" fill="#fff" stroke="#e5dccd"/>
+        <rect x="34" y="50" width="106" height="14" rx="3" fill="#cfc6b6"/>
+        <rect x="34" y="74" width="48" height="40" rx="3" fill="#e3ddd1"/>
+        <rect x="42" y="96" width="7" height="14" fill="#b9ae9a"/><rect x="54" y="88" width="7" height="22" fill="#b9ae9a"/><rect x="66" y="80" width="7" height="30" fill="#b9ae9a"/>
+        <rect x="90" y="76" width="50" height="5" rx="2" fill="#d9d2c4"/><rect x="90" y="88" width="50" height="5" rx="2" fill="#d9d2c4"/><rect x="90" y="100" width="50" height="5" rx="2" fill="#d9d2c4"/>
+        <rect x="34" y="124" width="106" height="5" rx="2" fill="#d9d2c4"/><rect x="34" y="136" width="80" height="5" rx="2" fill="#d9d2c4"/>
+      </g>
+      <rect x="170" y="30" width="46" height="130" rx="5" fill="#d9cdb8"/>
+      <g fill="#bfae8f"><rect x="178" y="42" width="8" height="100"/><rect x="194" y="42" width="8" height="100"/></g>
+      <ellipse cx="190" cy="150" rx="62" ry="22" fill="#e8d9b8"/><ellipse cx="190" cy="142" rx="48" ry="14" fill="#f2e6c9"/>
+      <path d="M196 96c10-16 34-18 46-6 6 6 4 16-6 20l-8 14-12-4-6 12-10-6z" fill="#c8922f"/>
+      <path d="M204 92l-8-14 12 6zM236 94l10-12-4 14z" fill="#9a6b1c"/>
+    </svg>{% endmacro %}
+{% macro funds(cls="dk-art") %}<svg class="{{ cls }}" viewBox="0 0 260 190" aria-hidden="true">
+      <circle cx="165" cy="95" r="80" fill="#cfeadc" opacity=".6"/>
+      <path d="M20 140 90 100l35 14 80-62" fill="none" stroke="#7cc9a0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+      <path d="m196 40 28-4-6 28z" fill="#7cc9a0"/>
+      <g fill="#d9a441" stroke="#a87820" stroke-width="2">
+        <ellipse cx="60" cy="168" rx="30" ry="8"/><ellipse cx="60" cy="161" rx="30" ry="8"/>
+        <g><ellipse cx="140" cy="168" rx="30" ry="8"/><ellipse cx="140" cy="160" rx="30" ry="8"/><ellipse cx="140" cy="152" rx="30" ry="8"/><ellipse cx="140" cy="144" rx="30" ry="8"/></g>
+        <g><ellipse cx="205" cy="168" rx="30" ry="8"/><ellipse cx="205" cy="160" rx="30" ry="8"/><ellipse cx="205" cy="152" rx="30" ry="8"/><ellipse cx="205" cy="144" rx="30" ry="8"/><ellipse cx="205" cy="136" rx="30" ry="8"/><ellipse cx="205" cy="128" rx="30" ry="8"/></g>
+      </g>
+      <path d="M140 138V98" stroke="#3f8f4f" stroke-width="5" stroke-linecap="round"/>
+      <path d="M140 104c-26-2-36-20-34-34 22 0 36 12 34 34z" fill="#58a85f"/>
+      <path d="M140 96c4-26 24-38 44-34 0 22-18 36-44 34z" fill="#3f9a52"/>
+    </svg>{% endmacro %}
+{% macro quiz(cls="dk-art") %}<svg class="{{ cls }}" viewBox="0 0 260 190" aria-hidden="true">
+      <circle cx="170" cy="100" r="78" fill="#e3dcfa" opacity=".7"/>
+      <g transform="rotate(-10 150 110)">
+        <rect x="80" y="62" width="130" height="104" rx="10" fill="#fff" stroke="#d9d2f2" stroke-width="2"/>
+        <rect x="128" y="54" width="34" height="14" rx="6" fill="#8a78d8"/>
+        <rect x="96" y="84" width="22" height="22" rx="5" fill="#d4f0df" stroke="#3f9a6a" stroke-width="2"/><path d="m101 95 5 5 8-10" fill="none" stroke="#2f8a58" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="126" y="88" width="68" height="6" rx="3" fill="#a99bea"/><rect x="126" y="99" width="48" height="6" rx="3" fill="#cfc6f3"/>
+        <rect x="96" y="120" width="22" height="22" rx="5" fill="#fff" stroke="#8a78d8" stroke-width="2"/>
+        <rect x="126" y="124" width="68" height="6" rx="3" fill="#a99bea"/><rect x="126" y="135" width="48" height="6" rx="3" fill="#cfc6f3"/>
+      </g>
+      <circle cx="205" cy="44" r="26" fill="#ffc83d"/><circle cx="198" cy="37" r="9" fill="#ffe08a"/>
+      <rect x="194" y="68" width="22" height="12" rx="4" fill="#5a4aa8"/>
+      <g stroke="#ffb524" stroke-width="4" stroke-linecap="round"><path d="M205 6v8M238 18l-6 6M246 46h-8M172 18l6 6M164 46h8"/></g>
+    </svg>{% endmacro %}
+{% macro stocks(cls="dk-art") %}<svg class="{{ cls }}" viewBox="0 0 260 190" aria-hidden="true">
+  <circle cx="165" cy="95" r="80" fill="#cfe0fb" opacity=".6"/>
+  <path d="M18 150 70 112l40 22 56-52 40 14 36-40" fill="none" stroke="#7fb0f2" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+  <path d="m214 40 28-2-10 26z" fill="#7fb0f2"/>
+  <g stroke-width="3" stroke-linecap="round"><path d="M70 96v70" stroke="#1f9d6a"/><path d="M110 72v74" stroke="#d64545"/><path d="M150 88v66" stroke="#1f9d6a"/><path d="M190 52v70" stroke="#1f9d6a"/></g>
+  <rect x="58" y="112" width="24" height="38" rx="4" fill="#2fb47c"/><rect x="98" y="88" width="24" height="42" rx="4" fill="#e45b5b"/>
+  <rect x="138" y="104" width="24" height="34" rx="4" fill="#2fb47c"/><rect x="178" y="70" width="24" height="40" rx="4" fill="#2fb47c"/>
+  <rect x="30" y="170" width="200" height="6" rx="3" fill="#b9cdea"/>
+</svg>{% endmacro %}

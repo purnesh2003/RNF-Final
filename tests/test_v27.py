@@ -1,4 +1,4 @@
-"""Referral links, scheduled posts/quizzes, and search."""
+"""Referral links, scheduled posts/quizzes, ."""
 import json
 from datetime import datetime, timedelta, timezone
 
@@ -65,7 +65,6 @@ def test_scheduled_post_hidden_until_due_then_appears(app, client):
     signup(client)
     assert b"Later post" not in client.get("/").data
     assert b"Later post" not in client.get("/opinions").data
-    assert b"Later post" not in client.get("/search?q=secret").data
     with app.app_context():
         p = Post.query.filter_by(title="Later post").one()
         assert p.publish_at is not None and p.notified_at is None
@@ -116,33 +115,6 @@ def test_members_cannot_use_scheduled_admin_pages(app, client):
     assert client.post("/admin/scheduled/post/1/now").status_code in (302, 403)
 
 
-# ------------------------------------------------------------ search
-def test_search_posts_documents_and_chat(app, client):
-    admin = admin_client(app)
-    admin.post("/admin/posts/new", data={"title": "Nifty outlook", "body": "Markets look calm", "section": "stocks", "category": "news"})
-    signup(client)
-    with app.app_context():
-        uid = User.query.filter_by(email="member.a@gmail.com").one().id
-        db.session.add(Message(user_id=uid, body="Anyone watching Nifty today?", channel="traders"))
-        db.session.add(Message(user_id=uid, body="report", file_key="a" * 32 + ".pdf", file_name="Nifty-report.pdf",
-                               file_mime="application/pdf", channel="general"))
-        db.session.add(Message(user_id=uid, body="Nifty deleted", channel="general", deleted=True))
-        db.session.commit()
-    body = client.get("/search?q=nifty").get_data(as_text=True)
-    assert "Nifty outlook" in body and "Anyone watching Nifty today?" in body and "Nifty-report.pdf" in body
-    assert "Nifty deleted" not in body
-    only_chat = client.get("/search?q=nifty&in=chat").get_data(as_text=True)
-    assert "Anyone watching" in only_chat and "Nifty outlook" not in only_chat
-    assert b"No results" in client.get("/search?q=zzzzqq").data
-    assert b"at least 2" in client.get("/search?q=a").data
-
-
-def test_search_treats_percent_literally_and_needs_login(app, client):
-    assert client.get("/search?q=nifty").status_code == 302
-    signup(client)
-    assert b"No results" in client.get("/search?q=%25%25").data  # "%%" must not match everything
-
-
 # ------------------------------------------------------------ disclaimer
 def test_disclaimer_page_and_footer_are_public(app, client):
     r = client.get("/disclaimer")
@@ -152,23 +124,25 @@ def test_disclaimer_page_and_footer_are_public(app, client):
     assert "SEBI registered advisor" in client.get("/register").get_data(as_text=True)
 
 
-# ------------------------------------------------------------ calculator tabs, wording
-def test_calculator_tabs_are_plain_menu_tabs_for_everyone(app, client):
+# ------------------------------------------------------------ one Calculator tab (SIP + SWP inside), wording
+def test_one_calculator_tab_with_sip_and_swp_inside_for_everyone(app, client):
     home = client.get("/").get_data(as_text=True)  # logged out
-    assert 'class="nav-link" href="/sip-calculator">SIP Calculator<' in home
-    assert 'class="nav-link" href="/swp-calculator">SWP Calculator<' in home
-    assert "btn-calc" not in home and "nav-calc" not in home and "calc-float" not in home  # no pill, no yellow button, no corner button
+    assert 'class="nav-link" href="/calculator">Calculator<' in home
+    assert "/swp-calculator" not in home and "btn-calc" not in home and "nav-calc" not in home and "calc-float" not in home
     assert "free market insights" not in home.lower() and "market insights are free" not in home.lower()
-    signup(client)
-    assert "/swp-calculator" in client.get("/news").get_data(as_text=True)
-    assert 'nav-link active" href="/sip-calculator"' in client.get("/sip-calculator").get_data(as_text=True)
-
-
-def test_swp_calculator_is_public(app, client):
-    r = client.get("/swp-calculator")  # logged out
+    r = client.get("/calculator")
     page = r.get_data(as_text=True)
-    assert r.status_code == 200 and "SWP Calculator" in page and "swp.js" in page
-    for label in ("Total investment", "Withdrawal per month", "Expected return rate", "Time period", "Final value"):
+    assert r.status_code == 200 and 'nav-link active" href="/calculator"' in page
+    assert 'data-calc="sip"' in page and 'data-calc="swp"' in page and "calculator.js" in page
+    for label in ("Final amount required", "Monthly SIP required",                     # SIP half
+                  "Total investment", "Withdrawal per month", "Final value", "Time period"):  # SWP half
         assert label in page
-    assert 'nav-link active" href="/swp-calculator"' in page
-    assert client.get("/sip-calculator").status_code == 200
+    signup(client)
+    assert 'href="/calculator"' in client.get("/news").get_data(as_text=True)
+
+
+def test_old_calculator_addresses_redirect_to_the_one_page(app, client):
+    r = client.get("/sip-calculator")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/calculator#sip")
+    r = client.get("/swp-calculator")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/calculator#swp")

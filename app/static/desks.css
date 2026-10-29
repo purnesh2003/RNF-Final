@@ -1,0 +1,98 @@
+/* Home page cards: News, Mutual Funds, Quiz */
+.desks { display: grid; gap: 1.1rem; margin: 1.5rem 0 2rem; grid-template-columns: 1fr; }
+.dk { --accent: #0b6b57; --accent-2: #095645; --tint: #fff4e6; --tint-2: #fffaf3;
+  position: relative; overflow: hidden; border-radius: 22px; padding: 1.5rem 1.25rem 1.25rem; border: 1px solid rgba(16,32,47,.07);
+  background: linear-gradient(160deg, var(--tint-2) 0%, var(--tint) 100%); box-shadow: 0 8px 24px rgba(16,32,47,.07); }
+.dk-news  { --tint: #fdeedd; --tint-2: #fffaf4; --icon-bg: #fde3c6; --icon-fg: #d9772b; }
+.dk-funds { --tint: #e3f4ec; --tint-2: #f6fcf9; --icon-bg: #d3eddf; --icon-fg: #0b6b57; }
+.dk-quiz  { --accent: #4a2fb0; --accent-2: #3b2491; --tint: #ece8fb; --tint-2: #f8f6ff; --icon-bg: #e0d9f8; --icon-fg: #4a2fb0; }
+.dk-art { position: absolute; top: .6rem; right: .4rem; width: min(42%, 250px); height: auto; pointer-events: none; z-index: 0; }
+.dk > *:not(.dk-art) { position: relative; z-index: 1; }
+.dk-icon { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 16px; background: var(--icon-bg); color: var(--icon-fg); margin-bottom: .9rem; }
+.dk-icon svg { width: 28px; height: 28px; }
+.dk-title { font-size: 2rem; margin: 0 0 .35rem; }
+.dk-sub { color: var(--muted); font-size: 1.05rem; max-width: 22ch; margin: 0 0 1.1rem; }
+.dk-quiz .dk-sub { max-width: 30ch; }
+
+.dk-chips { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 1.2rem 0 1.1rem; }
+.dk-chips li { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem .85rem; border-radius: 12px; background: rgba(255,255,255,.7);
+  font-weight: 500; font-size: .92rem; color: var(--ink); box-shadow: 0 1px 2px rgba(16,32,47,.05); }
+.dk-chips svg { width: 18px; height: 18px; color: #e0742a; }
+.dk-chips li:nth-child(2) svg { color: #8b6a3a; } .dk-chips li:nth-child(3) svg { color: #2f7be0; } .dk-chips li:nth-child(4) svg { color: #7a7f88; }
+
+.dk-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: .6rem; margin: 1.4rem 0 1rem; }
+.dk-tiles a { display: flex; flex-direction: column; align-items: center; text-align: center; gap: .1rem; padding: .8rem .35rem; border-radius: 14px;
+  background: rgba(255,255,255,.85); border: 1px solid rgba(16,32,47,.07); color: var(--ink); text-decoration: none; transition: transform .15s, box-shadow .15s; }
+.dk-tiles a:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(16,32,47,.1); }
+.dk-tiles b { font-size: .82rem; font-weight: 600; margin-top: .35rem; line-height: 1.15; }
+.dk-tiles small { font-size: .7rem; color: var(--muted); line-height: 1.2; }
+.t-ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; }
+.t-ic svg { width: 22px; height: 22px; }
+.t-green { background: #dff3e8; color: #0b8a55; } .t-purple { background: #ece6fb; color: #6a45d0; }
+.t-amber { background: #fff1d3; color: #f2a516; } .t-blue { background: #e0ecfd; color: #2f6fe0; }
+
+.dk-strip { display: flex; align-items: center; gap: .8rem; padding: .8rem; border-radius: 16px; background: rgba(255,255,255,.55); }
+.dk-bolt { width: 22px; height: 22px; flex: none; color: #f08a24; }
+.dk-funds .dk-bolt { color: var(--accent); }
+.dk-strip-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.dk-strip-text small { color: var(--muted); font-size: .82rem; }
+.dk-strip-text strong { font-size: 1rem; font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dk-btn { flex: none; display: inline-flex; align-items: center; gap: .5rem; padding: .85rem 1.2rem; border-radius: 14px; background: var(--accent); color: #fff;
+  font-weight: 600; text-decoration: none; box-shadow: 0 6px 14px rgba(11,107,87,.25); white-space: nowrap; transition: background .15s, transform .15s; }
+.dk-news .dk-btn { box-shadow: 0 6px 14px rgba(11,107,87,.25); }
+.dk-quiz .dk-btn { box-shadow: 0 6px 14px rgba(74,47,176,.28); }
+.dk-btn:hover { background: var(--accent-2); color: #fff; transform: translateY(-1px); }
+.dk-arrow { width: 18px; height: 18px; }
+
+.dk-strip-quiz { margin-top: 1.4rem; gap: 1rem; }
+.dk-score { display: flex; align-items: center; gap: .6rem; padding-right: 1rem; border-right: 1px solid rgba(16,32,47,.12); min-width: 0; }
+.dk-score > div { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.dk-score small, .dk-more small { color: var(--muted); font-size: .8rem; }
+.dk-score strong { font-size: 1.6rem; color: var(--ink); }
+.dk-score .dk-small-strong { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 12ch; }
+.dk-trophy { width: 34px; height: 34px; flex: none; }
+.dk-more { display: flex; align-items: center; gap: .6rem; flex: 1 1 auto; min-width: 0; }
+.dk-more svg { width: 28px; height: 28px; color: var(--accent); flex: none; }
+.dk-more div { display: flex; flex-direction: column; line-height: 1.2; }
+.dk-more b { font-weight: 600; font-size: .95rem; color: var(--ink); }
+
+@media (min-width: 992px) {
+  .desks { grid-template-columns: repeat(3, 1fr); align-items: stretch; }
+  .dk { display: flex; flex-direction: column; }
+  .dk-strip { margin-top: auto; }
+  .dk-strip { flex-wrap: wrap; }
+  .dk-strip-text { flex: 1 1 calc(100% - 40px); }
+  .dk-btn { flex: 1 1 100%; justify-content: center; }
+  .dk-more { display: none; }
+  .dk-art { width: 38%; }
+  .dk-score { border-right: 0; padding-right: 0; }
+}
+@media (max-width: 575px) {
+  .dk { padding: 1.25rem 1rem 1rem; }
+  .dk-title { font-size: 1.85rem; }
+  .dk-tiles { gap: .4rem; }
+  .dk-strip { gap: .5rem; padding: .65rem; }
+  .dk-strip-text strong { font-size: .88rem; }
+  .dk-strip-text small { font-size: .75rem; }
+  .dk-btn { padding: .75rem .8rem; font-size: .9rem; gap: .35rem; }
+  .dk-strip-quiz { gap: .6rem; }
+  .dk-score { padding-right: .6rem; }
+  .dk-strip-quiz .dk-more { display: none; }
+  .dk-strip-quiz .dk-btn { margin-left: auto; }
+}
+
+/* Page banners on the News, Mutual Funds, Stocks and Quiz pages */
+.page-banner { position: relative; overflow: hidden; border: 1px solid rgba(16,32,47,.07); border-radius: 22px; padding: 1.5rem 1.4rem; min-height: 150px;
+  align-items: center; box-shadow: 0 8px 24px rgba(16,32,47,.07); }
+.page-banner > *:not(.banner-art) { position: relative; z-index: 1; }
+.page-banner > div { max-width: min(60%, 560px); }
+.banner-art { position: absolute; top: 50%; right: 1rem; width: min(40%, 270px); height: auto; transform: translateY(-50%); pointer-events: none; z-index: 0; }
+.banner-news { background: linear-gradient(160deg, #fffaf4, #fdeedd); }
+.banner-mutual_funds { background: linear-gradient(160deg, #f6fcf9, #e3f4ec); }
+.banner-stocks { background: linear-gradient(160deg, #f6faff, #e2edfc); }
+.banner-quiz { background: linear-gradient(160deg, #f8f6ff, #ece8fb); }
+@media (max-width: 575px) {
+  .page-banner { padding: 1.1rem 1rem; min-height: 130px; }
+  .page-banner > div { max-width: 62%; }
+  .banner-art { width: 38%; right: .4rem; }
+}

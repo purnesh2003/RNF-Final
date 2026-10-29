@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Quizzes · {{ site_name }}{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1><svg class="i"><use href="#i-quiz"/></svg>Quizzes</h1><p>Test your market knowledge. Each quiz can be attempted once.</p></div>{% if current_user.is_admin %}<a class="btn btn-brand" href="{{ url_for('admin.new_quiz') }}"><svg class="i"><use href="#i-plus"/></svg>Create quiz</a>{% endif %}</div>
+{% import "_art.html" as art %}
+<link rel="stylesheet" href="{{ url_for('static', filename='desks.css') }}">
+<div class="page-head page-banner banner-quiz">{{ art.quiz('banner-art') }}<div><h1><svg class="i"><use href="#i-quiz"/></svg>Quizzes</h1><p>Test your market knowledge. Each quiz can be attempted once.</p></div>{% if current_user.is_admin %}<a class="btn btn-brand" href="{{ url_for('admin.new_quiz') }}"><svg class="i"><use href="#i-plus"/></svg>Create quiz</a>{% endif %}</div>
 <div class="row g-3">
 {% for q in quizzes %}
   <div class="col-md-6"><div class="card h-100 shadow-sm border-0 rounded-4"><div class="card-body d-flex flex-column">

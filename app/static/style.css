@@ -144,6 +144,7 @@ img, video { max-width: 100%; height: auto; }
                background: radial-gradient(60% 90% at 100% 0%, rgba(11, 107, 87, .45), transparent 70%); }
 .hero > * { position: relative; z-index: 1; }
 .hero h1 { color: #fff; margin-bottom: 1rem; max-width: 18ch; }
+.hero-eyebrow { font-size: clamp(1.25rem, 3.4vw, 1.75rem); letter-spacing: .16em; font-weight: 700; color: #f2c14e; margin: 0 0 .75rem; }
 .hero-lead { font-size: 1.1rem; color: #cfdae5; max-width: 52ch; margin-bottom: 1.75rem; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
 .hero-portrait { margin: 0; justify-self: center; width: min(100%, 300px); }

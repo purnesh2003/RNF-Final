@@ -1,4 +1,4 @@
-"""split the community chat into channels (NASM, Investors, Traders, General)"""
+"""split the community chat into channels (NISM, Investors, Traders, General)"""
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy import inspect

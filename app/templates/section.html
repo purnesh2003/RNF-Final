@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ title }} · {{ site_name }}{% endblock %}
 {% block content %}
-<div class="page-head">
+{% import "_art.html" as art %}
+<link rel="stylesheet" href="{{ url_for('static', filename='desks.css') }}">
+<div class="page-head page-banner banner-{{ section }}">
+  {{ {'news': art.news, 'mutual_funds': art.funds, 'stocks': art.stocks}.get(section, art.news)('banner-art') }}
   <div>
     <h1>{% set sec_icon = {'news':'news','mutual_funds':'funds','stocks':'stocks'}.get(section, 'news') %}<svg class="i"><use href="#i-{{ sec_icon }}"/></svg>{{ title }}</h1>
     <p>{{ blurb }}</p>

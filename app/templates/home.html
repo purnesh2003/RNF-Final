@@ -2,8 +2,8 @@
 {% block content %}
 <section class="hero">
   <div class="hero-copy">
-    <h1>RNF COMMUNITY</h1>
-    <p class="hero-lead">Join Community For More Updates</p>
+    <p class="hero-eyebrow">RNF COMMUNITY</p>
+    <h1>Join Community For More Updates</h1>
     <div class="hero-actions">
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('community.chat') }}" class="btn btn-brand btn-lg">Open community</a>
@@ -12,7 +12,6 @@
         <a href="{{ url_for('auth.register') }}" class="btn btn-brand btn-lg">Create free account</a>
         <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-lg">Log in</a>
       {% endif %}
-      <a href="{{ url_for('main.sip_calculator') }}" class="btn btn-calc btn-lg"><svg class="i"><use href="#i-calc"/></svg>SIP &amp; SWP Calculators</a>
     </div>
   </div>
   <figure class="hero-portrait">
@@ -27,42 +26,7 @@
   <div><dt>Cost to members</dt><dd>Free</dd></div>
 </dl>
 
-<section class="block" id="sections" aria-labelledby="desks-h">
-  <div class="block-head"><h2 id="desks-h">Research desks</h2><p>Posted and curated by Rakshith, plus the newest quiz.</p></div>
-  <div class="row g-3">
-    {% for key, icon, title, text, endpoint in [
-      ('news','i-news','News','Headlines and developments that move the market.','main.news'),
-      ('mutual_funds','i-funds','Mutual Funds','Fund picks, NAV updates and guidance for long-term investors.','main.mutual_funds')] %}
-    {% set last = latest.get(key) if current_user.is_authenticated else none %}
-    <div class="col-12 col-md-4">
-      <a class="desk" href="{{ url_for(endpoint) }}">
-        <span class="desk-icon"><svg class="i"><use href="#{{ icon }}"/></svg></span>
-        <span class="desk-title">{{ title }}</span>
-        <span class="desk-text">{{ text }}</span>
-        <span class="desk-latest">
-          {% if last %}<small>Latest, {{ last.created_at|timeago }}</small><span>{{ last.title }}</span>
-          {% elif not current_user.is_authenticated %}<small>Members only</small><span>Log in to read the latest posts.</span>
-          {% else %}<small>No posts yet</small><span>New posts will appear here.</span>{% endif %}
-        </span>
-        <span class="desk-go">Open {{ title }}<svg class="i"><use href="#i-arrow"/></svg></span>
-      </a>
-    </div>
-    {% endfor %}
-    <div class="col-12 col-md-4">
-      <a class="desk" href="{{ url_for('main.take_quiz', quiz_id=latest_quiz.id) if latest_quiz and not quiz_attempt else url_for('main.quizzes') }}">
-        <span class="desk-icon"><svg class="i"><use href="#i-quiz"/></svg></span>
-        <span class="desk-title">Quiz</span>
-        <span class="desk-text">Test your market knowledge with the newest quiz.</span>
-        <span class="desk-latest">
-          {% if not current_user.is_authenticated %}<small>Members only</small><span>Log in to take the latest quiz.</span>
-          {% elif latest_quiz %}<small>{% if quiz_attempt %}Your score: {{ quiz_attempt.score }}/{{ quiz_attempt.total }}{% else %}New, {{ latest_quiz.created_at|timeago }}{% endif %}</small><span>{{ latest_quiz.title }}</span>
-          {% else %}<small>No quiz yet</small><span>New quizzes will appear here.</span>{% endif %}
-        </span>
-        <span class="desk-go">{% if latest_quiz and not quiz_attempt %}Take the quiz{% else %}Open Quizzes{% endif %}<svg class="i"><use href="#i-arrow"/></svg></span>
-      </a>
-    </div>
-  </div>
-</section>
+{% include "_desks.html" %}
 
 <div class="row g-4">
   <section class="col-lg-8" id="feed" aria-labelledby="feed-h">
@@ -90,7 +54,7 @@
       <div class="panel">
         <h3 class="panel-title">Your community</h3>
         <ul class="quick">
-          <li><a href="{{ url_for('community.chat') }}"><svg class="i"><use href="#i-chat"/></svg><span><strong>Community chat</strong><small>NASM, Investors, Traders, General</small></span></a></li>
+          <li><a href="{{ url_for('community.chat') }}"><svg class="i"><use href="#i-chat"/></svg><span><strong>Community chat</strong><small>NISM, Investors, Traders, General</small></span></a></li>
           <li><a href="{{ url_for('main.documents') }}"><svg class="i"><use href="#i-folder"/></svg><span><strong>Documents</strong><small>Every shared file in one place</small></span></a></li>
           <li><a href="{{ url_for('main.quizzes') }}"><svg class="i"><use href="#i-quiz"/></svg><span><strong>Quizzes</strong><small>Test your market knowledge</small></span></a></li>
           <li><a href="{{ url_for('main.polls') }}"><svg class="i"><use href="#i-poll"/></svg><span><strong>Polls</strong><small>Vote and see live results</small></span></a></li>
