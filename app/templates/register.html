@@ -19,6 +19,10 @@
         <div class="col-sm-6"><label class="form-label" for="occupation">Occupation</label>
           <input id="occupation" name="occupation" class="form-control" value="{{ occupation or '' }}" maxlength="100" placeholder="e.g. Student, Engineer" required></div>
       </div>
+      <div class="mb-3"><label class="form-label" for="phone">Mobile number</label>
+        <div class="input-group"><span class="input-group-text">+91</span>
+          <input id="phone" type="tel" name="phone" class="form-control" value="{{ phone or '' }}" inputmode="numeric" maxlength="18" pattern="(\+91|91|0)?[\s\-]?[6-9][0-9]{4}[\s\-]?[0-9]{5}" title="10-digit Indian mobile number" placeholder="98765 43210" autocomplete="tel-national" required></div>
+        <div class="form-text">Your 10-digit mobile number.</div></div>
       <div class="mb-3"><label class="form-label" for="password">Password</label>
         <input id="password" type="password" name="password" class="form-control" minlength="12" pattern="{{ pw_pattern }}" title="{{ pw_hint }}" autocomplete="new-password" required>
         <div class="form-text">{{ pw_hint }}</div></div>

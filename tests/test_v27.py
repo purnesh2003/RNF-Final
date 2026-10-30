@@ -31,7 +31,7 @@ def test_referral_link_counts_only_confirmed_friends(app, client):
     assert b"0</div>" in page.data
 
     friend = app.test_client()
-    form = {"name": "Ben", "email": "ben.friend@gmail.com", "dob": "2000-01-01", "occupation": "Dev",
+    form = {"name": "Ben", "email": "ben.friend@gmail.com", "dob": "2000-01-01", "occupation": "Dev", "phone": "9876543210",
             "password": "Password@12345", "confirm": "Password@12345", "ref": code}
     assert friend.post("/register", data=form).status_code == 302
     assert b"waiting to confirm" in client.get("/invite").data  # not counted until the email is confirmed
@@ -45,7 +45,7 @@ def test_referral_link_counts_only_confirmed_friends(app, client):
 
 def test_bad_referral_code_is_ignored_and_register_page_keeps_it(app, client):
     assert b'name="ref" value="ABC12345"' in client.get("/register?ref=abc12345").data
-    r = client.post("/register", data={"name": "Cy", "email": "cy.person@gmail.com", "dob": "2000-01-01", "occupation": "X",
+    r = client.post("/register", data={"name": "Cy", "email": "cy.person@gmail.com", "dob": "2000-01-01", "occupation": "X", "phone": "9876543210",
                                        "password": "Password@12345", "confirm": "Password@12345", "ref": "NOSUCH"})
     assert r.status_code == 302
     with app.app_context():
@@ -146,3 +146,37 @@ def test_old_calculator_addresses_redirect_to_the_one_page(app, client):
     assert r.status_code == 302 and r.headers["Location"].endswith("/calculator#sip")
     r = client.get("/swp-calculator")
     assert r.status_code == 302 and r.headers["Location"].endswith("/calculator#swp")
+
+
+# ------------------------------------------------------------ mobile number at sign-up
+def _reg(client, **over):
+    data = {"name": "Dev", "email": "dev.person@gmail.com", "dob": "2000-01-01", "occupation": "Dev",
+            "phone": "9876543210", "password": "Password@12345", "confirm": "Password@12345"}
+    data.update(over)
+    return client.post("/register", data=data)
+
+
+def test_signup_needs_a_valid_indian_mobile(app, client):
+    for bad in ("", "12345", "5876543210", "98765432101", "abcdefghij", "9999999999", "+91 12345 67890"):
+        assert _reg(client, phone=bad).status_code == 400, bad
+    with app.app_context():
+        assert User.query.filter_by(email="dev.person@gmail.com").count() == 0
+    assert b"10-digit Indian mobile" in _reg(client, phone="123").data
+    assert b'name="phone"' in client.get("/register").data
+
+
+def test_mobile_is_saved_as_ten_digits(app, client):
+    for raw in ("+91 98765-43210", "09876543210", "98765 43210"):
+        with app.app_context():
+            User.query.filter_by(email="dev.person@gmail.com").delete()
+            db.session.commit()
+        assert _reg(client, phone=raw).status_code == 302, raw
+        with app.app_context():
+            assert User.query.filter_by(email="dev.person@gmail.com").one().phone == "9876543210"
+
+
+def test_admin_sees_mobile_in_list_and_csv(app, client):
+    _reg(client)
+    admin = admin_client(app)
+    assert b"9876543210" in admin.get("/admin/users").data
+    assert b"9876543210" in admin.get("/admin/users.csv").data

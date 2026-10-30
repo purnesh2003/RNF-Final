@@ -80,9 +80,9 @@ def _csv_safe(v):
 def users_csv():
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["id", "name", "email", "dob", "occupation", "role", "active", "muted", "joined", "last_login"])
+    w.writerow(["id", "name", "email", "dob", "occupation", "phone", "role", "active", "muted", "joined", "last_login"])
     for u in User.query.order_by(User.id):
-        w.writerow([u.id, _csv_safe(u.name), _csv_safe(u.email), u.dob or "", _csv_safe(u.occupation), u.role, u.active, u.muted,
+        w.writerow([u.id, _csv_safe(u.name), _csv_safe(u.email), u.dob or "", _csv_safe(u.occupation), u.phone or "", u.role, u.active, u.muted,
                     u.created_at, u.last_login or ""])
     return Response(buf.getvalue(), mimetype="text/csv",
                     headers={"Content-Disposition": "attachment; filename=users.csv"})
@@ -113,16 +113,16 @@ def users_xlsx():
     wb = Workbook()
     ws = wb.active
     ws.title = "Members"
-    headers = ["ID", "Name", "Email", "Date of birth", "Age", "Occupation", "Role", "Status", "Muted",
+    headers = ["ID", "Name", "Email", "Date of birth", "Age", "Occupation", "Mobile", "Role", "Status", "Muted",
                "Joined (UTC)", "Last login (UTC)"]
     ws.append(headers)
     for c in ws[1]:
         c.font = Font(bold=True, color="FFFFFF")
         c.fill = PatternFill("solid", fgColor="0F172A")
         c.alignment = Alignment(vertical="center")
-    text_cols = {2, 3, 6}  # free text typed by members: store as text so "=..." is never run as a formula
+    text_cols = {2, 3, 6, 7}  # free text typed by members: store as text so "=..." is never run as a formula
     for u in User.query.order_by(User.id):
-        ws.append([u.id, u.name, u.email, u.dob, _age(u.dob), u.occupation or "", u.role,
+        ws.append([u.id, u.name, u.email, u.dob, _age(u.dob), u.occupation or "", u.phone or "", u.role,
                    "Active" if u.active else "Suspended", "Yes" if u.muted else "No",
                    _naive_utc(u.created_at), _naive_utc(u.last_login)])
         row = ws.max_row

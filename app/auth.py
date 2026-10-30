@@ -10,7 +10,7 @@ from .extensions import db, limiter
 from .mailer import external_link, send_mail
 from .models import User
 from .utils import is_safe_redirect, start_login_clock
-from .validators import check_email, check_password
+from .validators import check_email, check_password, check_phone
 
 bp = Blueprint("auth", __name__)
 
@@ -70,6 +70,8 @@ def register():
         email, email_err = check_email(request.form.get("email", ""))
         dob_raw = request.form.get("dob", "").strip()
         occupation = " ".join(request.form.get("occupation", "").split())[:100]
+        phone_raw = request.form.get("phone", "").strip()[:30]
+        phone, phone_err = check_phone(phone_raw)
         pw, pw2 = request.form.get("password", ""), request.form.get("confirm", "")
         ref = request.form.get("ref", "").strip().upper()[:12]
         error, dob = None, None
@@ -85,6 +87,8 @@ def register():
             error = "Please enter a valid date of birth."
         elif not occupation:
             error = "Please enter your occupation."
+        elif phone_err:
+            error = phone_err
         elif check_password(pw):
             error = check_password(pw)
         elif pw != pw2:
@@ -93,10 +97,11 @@ def register():
             error = "An account with this email already exists."
         if error:
             flash(error, "danger")
-            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, ref=ref, today=date.today().isoformat()), 400
+            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, phone=phone_raw, ref=ref, today=date.today().isoformat()), 400
         user = User.query.filter_by(email=email).first()  # an earlier, never-confirmed attempt may be re-used
         user = user or User(email=email)
         user.name, user.dob, user.occupation, user.email_verified = name, dob, occupation, False
+        user.phone = phone
         inviter = User.query.filter_by(referral_code=ref).first() if ref else None
         if inviter and inviter.id != user.id and not user.referred_by_id:
             user.referred_by_id = inviter.id  # counted for the inviter once this email is confirmed
@@ -107,13 +112,13 @@ def register():
         except IntegrityError:  # two sign-ups with the same email at the same moment
             db.session.rollback()
             flash("An account with this email already exists.", "danger")
-            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, ref=ref, today=date.today().isoformat()), 400
+            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, phone=phone_raw, ref=ref, today=date.today().isoformat()), 400
         sent, dev_link = _send_verification_email(user)
         if not sent and not dev_link:
             db.session.delete(user)  # no confirmation mail went out, so do not keep an account nobody can activate
             db.session.commit()
             flash("We could not send the confirmation email right now. Please check the address and try again in a few minutes.", "danger")
-            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, ref=ref, today=date.today().isoformat()), 503
+            return render_template("register.html", name=name, email=email, dob=dob_raw, occupation=occupation, phone=phone_raw, ref=ref, today=date.today().isoformat()), 503
         flash(f"Almost done! We sent a confirmation link to {email}. Open it to activate your account (check spam too).", "info")
         if dev_link:
             flash(f"Development confirmation link: {dev_link}", "warning")

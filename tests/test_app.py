@@ -44,10 +44,10 @@ def client(app):
 
 def signup(c, email="member.a@gmail.com", pw="Password@12345", name="Asha", dob="1999-05-17", occupation="Engineer"):
     """Register AND confirm the email (as the member would by clicking the mailed link), so the member ends up logged in."""
-    r = c.post("/register", data={"name": name, "email": email, "dob": dob, "occupation": occupation,
+    r = c.post("/register", data={"name": name, "email": email, "dob": dob, "occupation": occupation, "phone": "9876543210",
                                   "password": pw, "confirm": pw})
     if r.status_code != 302:  # rejected by validation: show the form with its error like before
-        return c.post("/register", data={"name": name, "email": email, "dob": dob, "occupation": occupation,
+        return c.post("/register", data={"name": name, "email": email, "dob": dob, "occupation": occupation, "phone": "9876543210",
                                          "password": pw, "confirm": pw}, follow_redirects=True)
     with c.application.app_context():
         uid = User.query.filter_by(email=email.strip().lower()).one().id
@@ -515,7 +515,7 @@ def test_admin_publishes_to_a_section(app, client):
 
 
 def test_after_login_and_signup_members_land_on_the_home_page(app, client):
-    r = client.post("/register", data={"name": "Asha", "email": "member.n@gmail.com", "dob": "1999-05-17", "occupation": "Engineer",
+    r = client.post("/register", data={"name": "Asha", "email": "member.n@gmail.com", "dob": "1999-05-17", "occupation": "Engineer", "phone": "9876543210",
                                        "password": "Password@12345", "confirm": "Password@12345"})
     assert r.status_code == 302 and r.headers["Location"].endswith("/")
     client.post("/logout")
@@ -579,7 +579,7 @@ def _token(app, email, **kw):
 
 
 def test_signup_needs_email_confirmation(app, client):
-    data = {"name": "Asha", "email": "real.person@gmail.com", "dob": "1999-05-17", "occupation": "Engineer",
+    data = {"name": "Asha", "email": "real.person@gmail.com", "dob": "1999-05-17", "occupation": "Engineer", "phone": "9876543210",
             "password": "Password@12345", "confirm": "Password@12345"}
     r = client.post("/register", data=data)
     assert r.status_code == 302 and "/login" in r.headers["Location"]
@@ -598,7 +598,7 @@ def test_signup_needs_email_confirmation(app, client):
 
 def test_only_gmail_allowed(app, client):
     for bad in ("someone@yahoo.com", "someone@outlook.com", "x@mailinator.com", "abc@gmail.com"):
-        r = client.post("/register", data={"name": "A", "email": bad, "dob": "1999-05-17", "occupation": "E",
+        r = client.post("/register", data={"name": "A", "email": bad, "dob": "1999-05-17", "occupation": "E", "phone": "9876543210",
                                            "password": "Password@12345", "confirm": "Password@12345"})
         assert r.status_code == 400, bad
     with app.app_context():
@@ -608,7 +608,7 @@ def test_only_gmail_allowed(app, client):
 def test_bad_or_expired_confirmation_link(app, client):
     r = client.get("/verify-email/not-a-token", follow_redirects=True)
     assert b"invalid or has expired" in r.data
-    client.post("/register", data={"name": "A", "email": "late.joiner@gmail.com", "dob": "1999-05-17", "occupation": "E",
+    client.post("/register", data={"name": "A", "email": "late.joiner@gmail.com", "dob": "1999-05-17", "occupation": "E", "phone": "9876543210",
                                    "password": "Password@12345", "confirm": "Password@12345"})
     token, _ = _token(app, "late.joiner@gmail.com")
     app.config["EMAIL_VERIFY_TTL"] = -1
@@ -618,7 +618,7 @@ def test_bad_or_expired_confirmation_link(app, client):
 
 
 def test_resend_and_reregister_unconfirmed(app, client):
-    data = {"name": "A", "email": "again.user@gmail.com", "dob": "1999-05-17", "occupation": "E",
+    data = {"name": "A", "email": "again.user@gmail.com", "dob": "1999-05-17", "occupation": "E", "phone": "9876543210",
             "password": "Password@12345", "confirm": "Password@12345"}
     client.post("/register", data=data)
     assert b"been sent" in client.post("/resend-verification", data={"email": "again.user@gmail.com"}, follow_redirects=True).data

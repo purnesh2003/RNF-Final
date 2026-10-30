@@ -28,6 +28,7 @@ class User(UserMixin, db.Model):
     email_verified = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())  # kept for older databases; no longer used
     dob = db.Column(db.Date)                      # collected at sign-up (null for admin/legacy accounts)
     occupation = db.Column(db.String(100))        # collected at sign-up
+    phone = db.Column(db.String(15))              # 10-digit Indian mobile, collected at sign-up (null for older accounts)
     password_hash = db.Column(db.String(255), nullable=False)  # never the plain password
     role = db.Column(db.String(20), nullable=False, default="user")  # user | admin
     active = db.Column(db.Boolean, nullable=False, default=True)

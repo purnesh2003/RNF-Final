@@ -46,6 +46,22 @@ def check_email(raw):
     return email, None
 
 
+def check_phone(raw):
+    """Return (ten_digits, error) for an Indian mobile number.
+
+    Accepts 9876543210 and also the usual ways people type it (+91 98765 43210, 098765-43210); the stored
+    value is always the plain 10 digits. Indian mobile numbers start with 6, 7, 8 or 9.
+    """
+    digits = re.sub(r"[\s\-().]", "", raw or "")
+    for prefix in ("+91", "0091", "91", "0"):
+        if digits.startswith(prefix) and len(digits) - len(prefix) == 10:
+            digits = digits[len(prefix):]
+            break
+    if not re.fullmatch(r"[6-9]\d{9}", digits) or len(set(digits)) == 1:
+        return digits, "Please enter a valid 10-digit Indian mobile number (it starts with 6, 7, 8 or 9)."
+    return digits, None
+
+
 def check_password(pw):
     """Return an error message, or None if the password is strong enough."""
     max_len = current_app.config["MAX_PASSWORD_LENGTH"]

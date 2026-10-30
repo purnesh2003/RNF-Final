@@ -25,13 +25,14 @@
 </div>
 <div class="table-responsive">
 <table class="table table-hover align-middle table-stack">
-  <thead><tr><th>Member</th><th>Date of birth</th><th>Occupation</th><th>Role</th><th>Status</th><th>Joined</th><th>Last login</th><th class="text-end">Actions</th></tr></thead>
+  <thead><tr><th>Member</th><th>Date of birth</th><th>Occupation</th><th>Mobile</th><th>Role</th><th>Status</th><th>Joined</th><th>Last login</th><th class="text-end">Actions</th></tr></thead>
   <tbody>
   {% for u in users.items %}
   <tr>
     <td data-label="Member"><div class="fw-semibold">{{ u.name }}</div><div class="small text-muted">{{ u.email }}</div></td>
     <td data-label="Date of birth">{{ u.dob.strftime('%d %b %Y') if u.dob else '-' }}</td>
     <td data-label="Occupation">{{ u.occupation or '-' }}</td>
+    <td data-label="Mobile">{{ u.phone or '-' }}</td>
     <td data-label="Role">{% if u.is_admin %}<span class="badge text-bg-dark">Admin</span>{% else %}<span class="text-muted">Member</span>{% endif %}</td>
     <td data-label="Status">
       {% if u.active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-danger">Suspended</span>{% endif %}
