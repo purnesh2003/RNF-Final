@@ -121,6 +121,12 @@ def create_app(config_object=Config):
             return f"{secs // 86400}d"
         return dt.strftime("%d %b %Y")
 
+    @app.template_filter("local")
+    def local_time(dt, fmt="%d %b %Y, %I:%M %p"):
+        """Stored times are UTC; show them in the site time zone (IST by default)."""
+        from . import scheduler
+        return scheduler.to_local(dt).strftime(fmt) if dt else "-"
+
     @app.context_processor
     def inject_globals():
         return {

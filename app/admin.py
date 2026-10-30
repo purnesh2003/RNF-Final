@@ -1,7 +1,7 @@
 """Admin area: dashboard, user management, quizzes, polls, opinions, moderation."""
 import csv
 import io
-from datetime import date, timedelta, timezone
+from datetime import date, timedelta
 import json
 import secrets
 
@@ -80,19 +80,23 @@ def _csv_safe(v):
 def users_csv():
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["id", "name", "email", "dob", "occupation", "phone", "role", "active", "muted", "joined", "last_login"])
+    w.writerow(["id", "name", "email", "dob", "occupation", "phone", "role", "active", "muted", "joined_ist", "last_login_ist"])
     for u in User.query.order_by(User.id):
         w.writerow([u.id, _csv_safe(u.name), _csv_safe(u.email), u.dob or "", _csv_safe(u.occupation), u.phone or "", u.role, u.active, u.muted,
-                    u.created_at, u.last_login or ""])
+                    _ist(u.created_at), _ist(u.last_login)])
     return Response(buf.getvalue(), mimetype="text/csv",
                     headers={"Content-Disposition": "attachment; filename=users.csv"})
 
 
 def _naive_utc(dt):
-    """Excel cannot store time zones; write UTC wall-clock time."""
+    """Excel cannot store time zones; write India (IST) wall-clock time."""
     if dt is None:
         return None
-    return dt.astimezone(timezone.utc).replace(tzinfo=None) if dt.tzinfo else dt
+    return scheduler.to_local(dt).replace(tzinfo=None)
+
+
+def _ist(dt):
+    return scheduler.to_local(dt).strftime("%Y-%m-%d %H:%M:%S") if dt else ""
 
 
 def _age(dob):
@@ -114,7 +118,7 @@ def users_xlsx():
     ws = wb.active
     ws.title = "Members"
     headers = ["ID", "Name", "Email", "Date of birth", "Age", "Occupation", "Mobile", "Role", "Status", "Muted",
-               "Joined (UTC)", "Last login (UTC)"]
+               "Joined (IST)", "Last login (IST)"]
     ws.append(headers)
     for c in ws[1]:
         c.font = Font(bold=True, color="FFFFFF")
@@ -131,8 +135,8 @@ def users_xlsx():
             if isinstance(cell.value, str):
                 cell.data_type = "s"
         ws.cell(row=row, column=4).number_format = "DD-MMM-YYYY"
-        ws.cell(row=row, column=10).number_format = "DD-MMM-YYYY HH:MM"
         ws.cell(row=row, column=11).number_format = "DD-MMM-YYYY HH:MM"
+        ws.cell(row=row, column=12).number_format = "DD-MMM-YYYY HH:MM"
     widths = [7, 26, 34, 15, 7, 24, 9, 11, 8, 20, 20]
     for i, w in enumerate(widths, 1):
         ws.column_dimensions[get_column_letter(i)].width = w

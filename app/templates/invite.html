@@ -18,7 +18,7 @@
 {% if joined %}
 <div class="table-responsive"><table class="table align-middle">
   <thead><tr><th>Friend</th><th>Joined</th></tr></thead>
-  {% for u in joined %}<tr><td>{{ u.name.split()[0] }}</td><td class="small">{{ u.created_at.strftime('%d %b %Y') }}</td></tr>{% endfor %}
+  {% for u in joined %}<tr><td>{{ u.name.split()[0] }}</td><td class="small">{{ u.created_at|local('%d %b %Y') }}</td></tr>{% endfor %}
 </table></div>
 {% else %}
 <div class="empty"><svg class="i"><use href="#i-users"/></svg><strong>No one has joined yet</strong><span>Send your link to a friend to get started.</span></div>

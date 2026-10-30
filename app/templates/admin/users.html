@@ -38,8 +38,8 @@
       {% if u.active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-danger">Suspended</span>{% endif %}
       {% if u.muted %}<span class="badge text-bg-secondary">Muted</span>{% endif %}
     </td>
-    <td class="small" data-label="Joined">{{ u.created_at.strftime('%d %b %Y') }}</td>
-    <td class="small" data-label="Last login">{{ u.last_login.strftime('%d %b %Y %H:%M') if u.last_login else '-' }}</td>
+    <td class="small" data-label="Joined">{{ u.created_at|local }}</td>
+    <td class="small" data-label="Last login">{{ u.last_login|local }}</td>
     <td data-label="Actions" class="text-end">
       {% if u.id != current_user.id %}
       <div class="dropdown">

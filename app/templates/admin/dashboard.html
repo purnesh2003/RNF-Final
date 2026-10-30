@@ -45,7 +45,7 @@
 <div class="block-head mt-4"><h2 class="h4">Newest members</h2></div>
 <div class="table-responsive"><table class="table align-middle table-stack">
   <thead><tr><th>Name</th><th>Email</th><th>Joined</th></tr></thead>
-  <tbody>{% for u in recent %}<tr><td data-label="Name">{{ u.name }}</td><td data-label="Email">{{ u.email }}</td><td data-label="Joined">{{ u.created_at.strftime('%d %b %Y %H:%M') }}</td></tr>
+  <tbody>{% for u in recent %}<tr><td data-label="Name">{{ u.name }}</td><td data-label="Email">{{ u.email }}</td><td data-label="Joined">{{ u.created_at|local }}</td></tr>
   {% else %}<tr><td colspan="3" class="text-muted">No members yet.</td></tr>{% endfor %}</tbody>
 </table></div>
 {% endblock %}
