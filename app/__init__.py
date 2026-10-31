@@ -2,7 +2,7 @@ import os
 import secrets
 
 import click
-from flask import Flask, g, jsonify, session, redirect, render_template, request, url_for
+from flask import Flask, flash, g, jsonify, session, redirect, render_template, request, url_for
 from flask_login import current_user, logout_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -85,6 +85,8 @@ def create_app(config_object=Config):
 
     @app.after_request
     def security_headers(resp):
+        if resp.mimetype == "text/html":  # pages carry one-time security tokens: never serve an old copy from the phone's cache
+            resp.headers.setdefault("Cache-Control", "no-store")
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -144,6 +146,26 @@ def create_app(config_object=Config):
         app.register_error_handler(
             code, lambda e, code=code, msg=msg: (render_template("error.html", code=code, msg=msg), code)
         )
+
+    from flask_wtf.csrf import CSRFError
+
+    @app.errorhandler(CSRFError)
+    def csrf_failed(e):
+        """A stale or cached form (old tab, phone "back" button) is sent without a valid security token.
+        Show a friendly message and a fresh form instead of a bare "Bad Request" page."""
+        if request.headers.get("X-Requested-With") == "fetch" or request.is_json:
+            return jsonify(ok=False, error="Your page was out of date. Please reload and try again."), 400
+        flash("That page was out of date. Please try again.", "warning")
+        try:
+            app.url_map.bind("").match(request.path, method="GET")
+            return redirect(request.path)
+        except Exception:
+            return redirect(url_for("main.home"))
+
+    @app.errorhandler(500)
+    def server_error(e):  # Flask has already logged the traceback; show the same friendly page as the other errors
+        db.session.rollback()
+        return render_template("error.html", code=500, msg="Something went wrong on our side. Please try again in a moment."), 500
 
     register_cli(app)
     return app

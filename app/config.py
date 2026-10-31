@@ -42,6 +42,7 @@ class Config:
     # --- Redis: Socket.IO fan-out across servers + shared rate-limit counters ---
     REDIS_URL = _REDIS
     RATELIMIT_STORAGE_URI = _REDIS or "memory://"
+    RATELIMIT_SWALLOW_ERRORS = True  # if the rate-limit store (Redis) hiccups, let the request through instead of a 500 page
     RATELIMIT_ENABLED = os.environ.get("RATELIMIT_ENABLED", "1") == "1"  # set 0 ONLY on a staging copy for load tests
 
     # --- Sessions / cookies ---
@@ -53,7 +54,10 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "0") == "1"
-    SESSION_PROTECTION = "strong"
+    # "strong" signs a member out whenever their IP address changes between two requests. Phones on mobile data
+    # change IP all the time, so the login looked like it "did nothing" and sent them back to the login page.
+    # "basic" still ties the session to the browser but only marks it non-fresh when the IP changes.
+    SESSION_PROTECTION = "basic"
     SESSION_COOKIE_PATH = "/"
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE

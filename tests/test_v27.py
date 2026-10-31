@@ -1,4 +1,4 @@
-"""Referral links, scheduled posts/quizzes, ."""
+"""Referral links and scheduled posts/quizzes."""
 import json
 from datetime import datetime, timedelta, timezone
 

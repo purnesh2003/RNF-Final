@@ -274,13 +274,20 @@ def change_password():
         elif new == cur:
             flash("Choose a different password.", "danger")
         else:
-            current_user.set_password(new)
-            current_user.must_change_password = False
-            current_user.session_version += 1
-            db.session.commit()
-            login_user(current_user)
             from flask import session
-            session["_auth_version"] = current_user.session_version
+            user = db.session.get(User, current_user.id)  # the real row, not the request-wide proxy
+            try:
+                user.set_password(new)
+                user.must_change_password = False
+                user.session_version += 1
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                current_app.logger.exception("password change failed for user %s", user.id)
+                flash("We could not save your new password. Please try again.", "danger")
+                return render_template("change_password.html"), 500
+            login_user(user)
+            session["_auth_version"] = user.session_version
             flash("Password updated.", "success")
             return redirect(url_for("main.home"))
     return render_template("change_password.html")
