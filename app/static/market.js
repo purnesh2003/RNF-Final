@@ -4,7 +4,7 @@
   if (!bar || !panel) return;
   var openKind = null;
 
-  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text) e.appendChild(window.rnfLinkify ? window.rnfLinkify(text) : document.createTextNode(text)); return e; }
 
   function fmt(iso) {
     try { return new Date(iso).toLocaleString([], {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}); }

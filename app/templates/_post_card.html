@@ -44,7 +44,7 @@
   </div>
 
   <div class="ig-caption{% if p.body|length > 180 or p.body.count('\n') > 2 %} clamped{% endif %}">
-    <div class="ig-text"><strong>{{ p.title }}</strong><br>{{ p.body }}</div>
+    <div class="ig-text"><strong>{{ p.title }}</strong><br>{{ p.body|linkify }}</div>
     {% if p.body|length > 180 or p.body.count('\n') > 2 %}<button type="button" class="ig-readmore">more</button>{% endif %}
   </div>
 

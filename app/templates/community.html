@@ -47,6 +47,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='linkify.js') }}"></script>
 <script src="{{ url_for('static', filename='market.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/socket.io.min.js') }}"></script>
 <script nonce="{{ csp_nonce }}">
@@ -99,7 +100,7 @@ function render(m) {
     head.append(del);
   }
   row.append(head);
-  if (m.body) row.append(el('div', 'msg-body', m.body));          // textContent => no HTML injection
+  if (m.body) { const bd = el('div', 'msg-body'); bd.append(window.rnfLinkify(m.body)); row.append(bd); }  // built from text nodes => no HTML injection
   if (m.file) {
     if (m.file.is_image) {
       const a = el('a'); a.href = m.file.url; a.target = '_blank'; a.rel = 'noopener';

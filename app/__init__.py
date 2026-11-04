@@ -105,6 +105,29 @@ def create_app(config_object=Config):
             resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         return resp
 
+    @app.template_filter("linkify")
+    def linkify(text):
+        """Make http(s):// and www. addresses in a post clickable. Everything else stays plain, escaped text."""
+        import re
+        from markupsafe import Markup, escape
+        out, pos = [], 0
+        for m in re.finditer(r"(?:https?://|www\.)[^\s<>\"']+", text or "", flags=re.I):
+            url = m.group(0)
+            tail = ""
+            while url and url[-1] in ".,;:!?)]}":  # punctuation that ends a sentence is not part of the address
+                if url[-1] == ")" and url.count("(") >= url.count(")"):
+                    break
+                tail, url = url[-1] + tail, url[:-1]
+            if not url or "." not in url:
+                continue
+            href = url if url.lower().startswith("http") else "https://" + url
+            out.append(escape(text[pos:m.start()]))
+            out.append(Markup('<a href="{}" target="_blank" rel="noopener noreferrer nofollow">{}</a>').format(href, url))
+            out.append(escape(tail))
+            pos = m.end()
+        out.append(escape(text[pos:]))
+        return Markup("").join(out)
+
     @app.template_filter("timeago")
     def timeago(dt):
         from datetime import datetime, timezone

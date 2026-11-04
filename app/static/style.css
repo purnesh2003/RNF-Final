@@ -383,3 +383,5 @@ img, video { max-width: 100%; height: auto; }
 .swp-chart { width: 100%; height: 190px; display: block; background: #f7f9fb; border-radius: var(--r-sm); }
 .swp-table { max-height: 420px; overflow: auto; }
 .swp-table thead th { position: sticky; top: 0; background: var(--surface); }
+.ig-text a { color: var(--green); text-decoration: underline; word-break: break-all; }
+.msg-body a, .mu-body a, #mu-panel a { color: var(--green); text-decoration: underline; word-break: break-all; }

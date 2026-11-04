@@ -40,3 +40,21 @@ def test_missing_csrf_token_shows_a_friendly_retry(app):
     assert r.status_code == 302 and r.headers["Location"].endswith("/login")  # not a bare "Bad Request"
     page = c.get("/login")
     assert b"out of date" in page.data and page.headers["Cache-Control"] == "no-store"
+
+
+def test_links_in_posts_are_clickable_and_safe(app):
+    admin = app.test_client()
+    login(admin, "member.admin@gmail.com", "adminpass12345")
+    admin.post("/admin/posts/new", data={"title": "Link post", "section": "news", "category": "news",
+               "body": "Read https://example.com/a?b=1&c=2. Also www.example.org/x and <script>alert(1)</script>"})
+    page = admin.get("/news").get_data(as_text=True)
+    assert 'href="https://example.com/a?b=1&amp;c=2"' in page and 'href="https://www.example.org/x"' in page
+    assert 'rel="noopener noreferrer nofollow"' in page
+    assert "<script>alert(1)</script>" not in page and "&lt;script&gt;" in page
+
+
+def test_chat_page_loads_the_link_script_before_the_chat_code(app, client):
+    signup(client)
+    html = client.get("/community").get_data(as_text=True)
+    assert html.index("linkify.js") < html.index("market.js")
+    assert client.get("/static/linkify.js").status_code == 200
